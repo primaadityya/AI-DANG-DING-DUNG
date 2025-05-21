@@ -58,4 +58,3 @@ if user_input:
             bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
         now = datetime.now().strftime("%H:%M")
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply, "timestamp": now})
-        st.experimental_rerun()

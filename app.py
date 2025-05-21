@@ -6,7 +6,7 @@ OPENROUTER_API_KEY = os.environ.get("OPENROUTER_API_KEY")
 MODEL = "deepseek/deepseek-chat-v3-0324"
 HEADERS = {
   "Authorization": f"Bearer {OPENROUTER_API_KEY}",
-  "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",
+  "HTTP-Referer": "https://chatbot-by-dangdingdung.streamlit.app/",
   "X-Title": "AI Chatbot Streamlit"
 }
 API_URL = "https://openrouter.ai/api/v1/chat/completions"

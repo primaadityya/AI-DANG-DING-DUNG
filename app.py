@@ -10,7 +10,7 @@ if OPENROUTER_API_KEY:
 else:
     st.sidebar.error("API Key tidak ditemukan!")
 
-MODEL = "openai/gpt-3.5-turbo"
+MODEL = "deepseek/deepseek-chat-v3-0324"
 HEADERS = {
   "Authorization": f"Bearer {OPENROUTER_API_KEY}",
   "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",

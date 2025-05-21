@@ -97,6 +97,24 @@ st.markdown(
         color: #0084ff;
     }
     .stChatInputContainer {margin-top: 0.5rem;}
+    .centered-container, .chat-container {
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @media (max-width: 700px) {
+        .centered-container, .chat-container {
+            max-width: 98vw;
+            padding-left: 2vw;
+            padding-right: 2vw;
+        }
+        .bubble .msg {
+            max-width: 90vw;
+        }
+        .bubble.user { margin-left: 10vw; }
+        .bubble.assistant { margin-right: 10vw; }
+    }
     </style>
     """,
     unsafe_allow_html=True
@@ -174,5 +192,31 @@ if user_input:
             bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
         now = datetime.now().strftime("%H:%M")
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply, "timestamp": now})
-        st.experimental_rerun()
-st.markdown('</div>', unsafe_allow_html=True)
+        # Hapus st.experimental_rerun() agar tidak error di Streamlit Cloud
+
+# Perbaiki CSS agar responsif
+st.markdown(
+    """
+    <style>
+    .centered-container, .chat-container {
+        width: 100%;
+        max-width: 600px;
+        margin-left: auto;
+        margin-right: auto;
+    }
+    @media (max-width: 700px) {
+        .centered-container, .chat-container {
+            max-width: 98vw;
+            padding-left: 2vw;
+            padding-right: 2vw;
+        }
+        .bubble .msg {
+            max-width: 90vw;
+        }
+        .bubble.user { margin-left: 10vw; }
+        .bubble.assistant { margin-right: 10vw; }
+    }
+    </style>
+    """,
+    unsafe_allow_html=True
+)

@@ -3,33 +3,12 @@ import requests
 
 # Ambil API key dari secrets
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
-
-# Tampilkan bagian awal API key untuk debugging (jangan tampilkan seluruhnya untuk keamanan)
-if OPENROUTER_API_KEY:
-    st.sidebar.success(f"API Key ditemukan: {OPENROUTER_API_KEY[:5]}...")  # Hanya tampilkan 5 karakter pertama
-else:
-    st.sidebar.error("API Key tidak ditemukan!")
-
 MODEL = "deepseek/deepseek-chat-v3-0324"
 HEADERS = {
   "Authorization": f"Bearer {OPENROUTER_API_KEY}",
   "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",
   "X-Title": "AI Chatbot Streamlit"
 }
-
-# Tampilkan header Authorization untuk debugging (sensor sebagian besar untuk keamanan)
-auth_header = HEADERS["Authorization"]
-if auth_header.startswith("Bearer "):
-    masked_auth = f"Bearer {auth_header[7:12]}..." if len(auth_header) > 12 else auth_header
-    st.sidebar.info(f"Authorization header: {masked_auth}")
-else:
-    st.sidebar.warning("Format Authorization header tidak benar!")
-
-API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-# Tampilkan peringatan jika API key tidak tersedia
-if not OPENROUTER_API_KEY:
-    st.error("⚠️ OPENROUTER_API_KEY tidak ditemukan dalam secrets. Silakan tambahkan di Streamlit Cloud dashboard.")
 
 st.title("🧠 AI Chatbot Bubble Style")
 st.markdown(f"Powered by {MODEL} via OpenRouter 🤖")

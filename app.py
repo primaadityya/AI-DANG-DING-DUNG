@@ -1,6 +1,62 @@
 import streamlit as st
 import requests
 
+# Custom CSS agar mirip ChatGPT
+st.markdown(
+    """
+    <style>
+    .chat-container {
+        max-height: 70vh;
+        overflow-y: auto;
+        padding: 1rem 0.5rem 1rem 0.5rem;
+        background: #f7f7f8;
+        border-radius: 12px;
+        margin-bottom: 1rem;
+    }
+    .bubble {
+        display: flex;
+        align-items: flex-end;
+        margin-bottom: 0.7rem;
+    }
+    .bubble.user {
+        flex-direction: row-reverse;
+    }
+    .bubble .avatar {
+        width: 38px;
+        height: 38px;
+        border-radius: 50%;
+        margin: 0 0.5rem;
+        background: #e0e0e0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+    }
+    .bubble .msg {
+        max-width: 70vw;
+        padding: 0.7rem 1.1rem;
+        border-radius: 16px;
+        font-size: 1.08rem;
+        line-height: 1.5;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.04);
+    }
+    .bubble.user .msg {
+        background: #0084ff;
+        color: #fff;
+        border-bottom-right-radius: 4px;
+    }
+    .bubble.assistant .msg {
+        background: #fff;
+        color: #222;
+        border-bottom-left-radius: 4px;
+        border: 1px solid #e0e0e0;
+    }
+    .stChatInputContainer {margin-top: 0.5rem;}
+    </style>
+    """,
+    unsafe_allow_html=True
+)
+
 # Ambil API key dari secrets
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
 MODEL = "deepseek/deepseek-chat-v3-0324"
@@ -9,7 +65,6 @@ HEADERS = {
   "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",
   "X-Title": "AI Chatbot Streamlit"
 }
-
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 st.title("🧠 AI Chatbot Bubble Style")
@@ -18,38 +73,49 @@ st.markdown(f"Powered by {MODEL} via OpenRouter 🤖")
 if "chat_history" not in st.session_state:
     st.session_state.chat_history = []
 
+# Bubble chat area
+st.markdown('<div class="chat-container">', unsafe_allow_html=True)
 for chat in st.session_state.chat_history:
-    with st.chat_message(chat["role"]):
-        st.markdown(chat["content"])
+    role = chat["role"]
+    content = chat["content"]
+    if role == "user":
+        avatar = "<span class='avatar' style='background:#0084ff;color:#fff;'>🧑</span>"
+        bubble_class = "bubble user"
+    else:
+        avatar = "<span class='avatar'>🤖</span>"
+        bubble_class = "bubble assistant"
+    st.markdown(f"""
+    <div class='{bubble_class}'>
+        {avatar}
+        <div class='msg'>{content}</div>
+    </div>
+    """, unsafe_allow_html=True)
+st.markdown('</div>', unsafe_allow_html=True)
 
 user_input = st.chat_input("Tulis pesan di sini...")
 
 if user_input:
-    st.chat_message("user").markdown(user_input)
     st.session_state.chat_history.append({"role": "user", "content": user_input})
-    
     with st.spinner("Mengetik..."):
         try:
             payload = {
                 "model": MODEL,
                 "messages": [
                     {"role": "system", "content": "You are a helpful assistant."},
-                    {"role": "user", "content": user_input}
+                    *[
+                        {"role": c["role"], "content": c["content"]}
+                        for c in st.session_state.chat_history if c["role"] in ["user", "assistant"]
+                    ],
                 ]
             }
-            
             response = requests.post(API_URL, headers=HEADERS, json=payload)
-            
             if response.status_code == 200:
                 bot_reply = response.json()['choices'][0]['message']['content']
             else:
-                # Tampilkan detail error untuk membantu debugging
                 error_message = f"Error code: {response.status_code}, Response: {response.text}"
                 st.error(error_message)
                 bot_reply = f"⚠️ Maaf, gagal mengambil respons dari OpenRouter. Status code: {response.status_code}"
-                
         except Exception as e:
             bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
-        
-        st.chat_message("assistant").markdown(bot_reply)
         st.session_state.chat_history.append({"role": "assistant", "content": bot_reply})
+        st.experimental_rerun()  # Agar chat langsung muncul setelah bot membalas

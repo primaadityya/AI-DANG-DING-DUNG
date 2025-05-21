@@ -9,6 +9,7 @@ HEADERS = {
   "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",
   "X-Title": "AI Chatbot Streamlit"
 }
+
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 st.title("🧠 AI Chatbot Bubble Style")

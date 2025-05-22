@@ -3,7 +3,6 @@ import requests
 import uuid
 from datetime import datetime
 import json
-import time
 
 # Konfigurasi halaman
 st.set_page_config(
@@ -156,28 +155,6 @@ st.markdown("""
         font-weight: bold;
     }
     
-    .typing-animation {
-        display: inline-block;
-    }
-    
-    .typing-dot {
-        display: inline-block;
-        width: 4px;
-        height: 4px;
-        border-radius: 50%;
-        background-color: var(--secondary-text-color);
-        margin: 0 1px;
-        animation: typing 1.4s infinite ease-in-out;
-    }
-    
-    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
-    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
-    
-    @keyframes typing {
-        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
-        40% { transform: scale(1.2); opacity: 1; }
-    }
-    
     .model-selector {
         margin: 15px 0;
         padding: 10px;
@@ -203,20 +180,6 @@ st.markdown("""
     .chat-item.active {
         background-color: var(--background-color-secondary);
         border-color: #3b82f6;
-    }
-
-    .regenerate-btn {
-        display: none;
-        position: absolute;
-        bottom: -30px;
-        right: 20px;
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
-        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -257,42 +220,6 @@ if "selected_model" not in st.session_state:
 
 if "regenerate_last" not in st.session_state:
     st.session_state.regenerate_last = False
-
-# Fungsi untuk streaming response
-def stream_response(text, placeholder):
-    """Simulasi streaming text seperti Claude"""
-    words = text.split()
-    displayed_text = ""
-    
-    for i, word in enumerate(words):
-        displayed_text += word + " "
-        
-        # Update placeholder dengan animasi typing
-        if i < len(words) - 1:
-            typing_animation = '<span class="typing-animation"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
-            placeholder.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
-                </div>
-                <div>{displayed_text}{typing_animation}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Final message tanpa typing animation
-            placeholder.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{text.replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{displayed_text.strip()}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        
-        time.sleep(0.03)  # Delay untuk efek mengetik
 
 # Sidebar
 with st.sidebar:
@@ -456,51 +383,32 @@ if user_input:
                 current_chat["title"] = user_input[:30] + "..."
             else:
                 current_chat["title"] = user_input
-        
-        # Tampilkan pesan user
-        with chat_container:
-            timestamp = user_message["timestamp"].strftime("%H:%M")
-            st.markdown(f"""
-            <div class="user-message">
-                <div class="message-header">
-                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{user_input.replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{user_input}</div>
-            </div>
-            """, unsafe_allow_html=True)
     
-    # Dapatkan respons dari AI dengan streaming
-    response_placeholder = st.empty()
-    
-    try:
-        # Siapkan riwayat percakapan untuk API
-        messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
-        for msg in current_chat["messages"]:
-            messages_for_api.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
-        
-        payload = {
-            "model": current_model,
-            "messages": messages_for_api
-        }
-        
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
-        
-        if response.status_code == 200:
-            bot_reply = response.json()['choices'][0]['message']['content']
-        else:
-            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
+    # Tampilkan loading spinner
+    with st.spinner("AI sedang memikirkan jawaban..."):
+        try:
+            # Siapkan riwayat percakapan untuk API
+            messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
+            for msg in current_chat["messages"]:
+                messages_for_api.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
             
-    except Exception as e:
-        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
-    
-    # Stream response
-    stream_response(bot_reply, response_placeholder)
+            payload = {
+                "model": current_model,
+                "messages": messages_for_api
+            }
+            
+            response = requests.post(API_URL, headers=HEADERS, json=payload)
+            
+            if response.status_code == 200:
+                bot_reply = response.json()['choices'][0]['message']['content']
+            else:
+                bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
+                
+        except Exception as e:
+            bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
     
     # Tambahkan respons AI ke chat history
     ai_message = {

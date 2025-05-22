@@ -18,83 +18,171 @@ st.markdown("""
     .main-content {
         max-width: 800px;
         margin: 0 auto;
-        padding: 20px; /* Increased padding for better spacing */
-        font-size: 14px; /* Consistent font size */
+        padding: 0 20px;
     }
     
-    .user-message, .assistant-message {
-        padding: 15px 20px;
-        border-radius: 15px;
-        margin: 10px 0; /* Spacing between messages */
-        max-width: 80%; /* Limit width for better readability */
-        overflow-wrap: break-word; /* Prevent overflow */
-    }
-
     .user-message {
         background-color: var(--background-color-secondary);
         color: var(--text-color);
-        margin-left: auto; /* Align user messages to the right */
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-left: 20%;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color);
     }
-
+    
     .assistant-message {
         background-color: var(--background-color);
         color: var(--text-color);
-        margin-right: auto; /* Align assistant messages to the left */
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-right: 20%;
+        position: relative;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    .chat-input {
-        margin-top: 20px;
+    /* Light theme variables */
+    :root {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
+    }
+
+    /* Dark theme variables */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background-color: #1e1e1e;
+            --background-color-secondary: #2d2d2d;
+            --text-color: #fafafa;
+            --border-color: #404040;
+            --secondary-text-color: #a1a1a1;
+            --hover-color: #404040;
+        }
+    }
+
+    /* Streamlit dark theme detection */
+    .stApp[data-theme="dark"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
+    }
+
+    /* Force override for dark theme */
+    [data-testid="stApp"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
+    }
+
+    [data-testid="stApp"][data-theme="light"] {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
     }
     
     .message-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        margin-bottom: 8px;
         font-size: 12px;
         color: var(--secondary-text-color);
     }
-
-    .message-avatar {
-        width: 30px; /* Slightly larger avatars */
-        height: 30px;
-        border-radius: 50%;
+    
+    .message-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
     }
-
+    
+    .action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: var(--secondary-text-color);
+        font-size: 12px;
+        transition: background-color 0.2s;
+    }
+    
+    .action-btn:hover {
+        background-color: var(--hover-color);
+    }
+    
+    .message-avatar {
+        width: 24px;
+        height: 24px;
+        border-radius: 50%;
+        display: inline-block;
+        margin-right: 8px;
+        vertical-align: middle;
+    }
+    
+    .user-avatar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    
+    .ai-avatar {
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    
+    .model-selector {
+        margin: 15px 0;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: var(--background-color-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .chat-item {
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 4px;
+        border: 1px solid transparent;
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+    
+    .chat-item:hover {
+        background-color: var(--hover-color);
+    }
+    
+    .chat-item.active {
+        background-color: var(--background-color-secondary);
+        border-color: #3b82f6;
+    }
 </style>
 """, unsafe_allow_html=True)
-
-# Main chat display (inside the chat container)
-with chat_container:
-    for message in current_chat["messages"]:
-        timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
-
-        if message["role"] == "user":
-            st.markdown(f"""
-            <div class="user-message">
-                <div class="message-header">
-                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{message["content"]}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        else:
-            st.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{message["content"]}</div>
-            </div>
-            """, unsafe_allow_html=True)
-
 
 # Definisi model yang tersedia
 AVAILABLE_MODELS = {

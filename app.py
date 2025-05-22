@@ -108,7 +108,7 @@ st.markdown("""
     
     .message-actions {
         display: flex;
-        gap: 8px;
+        gap: 5px;
         align-items: center;
     }
     
@@ -116,20 +116,22 @@ st.markdown("""
         background: none;
         border: none;
         cursor: pointer;
-        padding: 4px 8px;
+        padding: 2px 6px;
         border-radius: 4px;
         color: var(--secondary-text-color);
-        font-size: 12px;
+        font-size: 11px;
         transition: background-color 0.2s;
+        opacity: 0.7;
     }
     
     .action-btn:hover {
         background-color: var(--hover-color);
+        opacity: 1;
     }
     
     .message-avatar {
-        width: 24px;
-        height: 24px;
+        width: 20px;
+        height: 20px;
         border-radius: 50%;
         display: inline-block;
         margin-right: 8px;
@@ -142,7 +144,7 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 10px;
+        font-size: 8px;
         font-weight: bold;
     }
     
@@ -152,7 +154,7 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 10px;
+        font-size: 8px;
         font-weight: bold;
     }
     
@@ -205,18 +207,33 @@ st.markdown("""
         border-color: #3b82f6;
     }
 
-    .regenerate-btn {
-        display: none;
-        position: absolute;
-        bottom: -30px;
-        right: 20px;
-        background: #3b82f6;
-        color: white;
+    .message-footer {
+        margin-top: 8px;
+        display: flex;
+        justify-content: flex-end;
+        gap: 5px;
+    }
+
+    .footer-btn {
+        background: none;
         border: none;
-        padding: 4px 8px;
-        border-radius: 4px;
-        font-size: 11px;
         cursor: pointer;
+        padding: 2px 6px;
+        border-radius: 3px;
+        color: var(--secondary-text-color);
+        font-size: 10px;
+        transition: all 0.2s;
+        opacity: 0.6;
+    }
+    
+    .footer-btn:hover {
+        background-color: var(--hover-color);
+        opacity: 1;
+    }
+
+    /* Hide scrollbar but keep functionality */
+    .main .block-container {
+        padding-top: 1rem;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -258,41 +275,109 @@ if "selected_model" not in st.session_state:
 if "regenerate_last" not in st.session_state:
     st.session_state.regenerate_last = False
 
-# Fungsi untuk streaming response
-def stream_response(text, placeholder):
-    """Simulasi streaming text seperti Claude"""
+# Fungsi untuk mendapatkan respons AI dengan streaming
+def get_ai_response_streaming(messages_for_api, placeholder):
+    """Dapatkan respons AI dengan efek streaming"""
+    try:
+        current_model = AVAILABLE_MODELS[st.session_state.selected_model]
+        
+        payload = {
+            "model": current_model,
+            "messages": messages_for_api,
+            "stream": True  # Enable streaming jika didukung
+        }
+        
+        response = requests.post(API_URL, headers=HEADERS, json=payload, stream=True)
+        
+        if response.status_code == 200:
+            # Jika streaming didukung
+            full_response = ""
+            try:
+                for line in response.iter_lines():
+                    if line:
+                        line = line.decode('utf-8')
+                        if line.startswith('data: '):
+                            json_str = line[6:]
+                            if json_str.strip() != '[DONE]':
+                                try:
+                                    data = json.loads(json_str)
+                                    if 'choices' in data and len(data['choices']) > 0:
+                                        delta = data['choices'][0].get('delta', {})
+                                        if 'content' in delta:
+                                            full_response += delta['content']
+                                            # Update display secara real-time
+                                            display_message_with_typing(full_response, placeholder, is_final=False)
+                                            time.sleep(0.05)  # Delay kecil untuk efek streaming
+                                except json.JSONDecodeError:
+                                    continue
+                
+                return full_response
+                
+            except:
+                # Fallback ke non-streaming jika ada error
+                payload["stream"] = False
+                response = requests.post(API_URL, headers=HEADERS, json=payload)
+                if response.status_code == 200:
+                    bot_reply = response.json()['choices'][0]['message']['content']
+                    simulate_typing_effect(bot_reply, placeholder)
+                    return bot_reply
+                else:
+                    return f"⚠️ Error {response.status_code}: {response.text}"
+        else:
+            # Jika streaming tidak didukung, gunakan simulasi typing
+            payload["stream"] = False
+            response = requests.post(API_URL, headers=HEADERS, json=payload)
+            if response.status_code == 200:
+                bot_reply = response.json()['choices'][0]['message']['content']
+                simulate_typing_effect(bot_reply, placeholder)
+                return bot_reply
+            else:
+                return f"⚠️ Error {response.status_code}: {response.text}"
+                
+    except Exception as e:
+        return f"⚠️ Terjadi kesalahan: {str(e)}"
+
+def simulate_typing_effect(text, placeholder):
+    """Simulasi efek mengetik kata demi kata"""
     words = text.split()
     displayed_text = ""
     
     for i, word in enumerate(words):
         displayed_text += word + " "
-        
-        # Update placeholder dengan animasi typing
-        if i < len(words) - 1:
-            typing_animation = '<span class="typing-animation"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
-            placeholder.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
+        display_message_with_typing(displayed_text.strip(), placeholder, is_final=(i == len(words) - 1))
+        time.sleep(0.08)  # Delay untuk efek mengetik
+
+def display_message_with_typing(text, placeholder, is_final=False):
+    """Display message dengan atau tanpa typing animation"""
+    timestamp = datetime.now().strftime('%H:%M')
+    
+    if is_final:
+        # Message final tanpa typing animation
+        placeholder.markdown(f"""
+        <div class="assistant-message">
+            <div class="message-header">
+                <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
+                <div class="message-actions">
+                    <button class="action-btn" onclick="copyToClipboard('{text.replace("'", "\\'")}')">📋</button>
                 </div>
-                <div>{displayed_text}{typing_animation}</div>
             </div>
-            """, unsafe_allow_html=True)
-        else:
-            # Final message tanpa typing animation
-            placeholder.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{text.replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{displayed_text.strip()}</div>
+            <div>{text}</div>
+            <div class="message-footer">
+                <button class="footer-btn" onclick="regenerateResponse()">🔄</button>
             </div>
-            """, unsafe_allow_html=True)
-        
-        time.sleep(0.03)  # Delay untuk efek mengetik
+        </div>
+        """, unsafe_allow_html=True)
+    else:
+        # Message dengan typing animation
+        typing_animation = '<span class="typing-animation"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
+        placeholder.markdown(f"""
+        <div class="assistant-message">
+            <div class="message-header">
+                <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
+            </div>
+            <div>{text} {typing_animation}</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # Sidebar
 with st.sidebar:
@@ -365,9 +450,24 @@ with st.sidebar:
         st.session_state.selected_model = selected_model
         st.rerun()
 
+# JavaScript untuk copy dan regenerate
+st.markdown("""
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text).then(function() {
+        // Success - bisa tambahkan notifikasi jika perlu
+    });
+}
+
+function regenerateResponse() {
+    // Trigger regenerate via Streamlit
+    window.parent.postMessage({type: 'streamlit:setComponentValue', value: 'regenerate'}, '*');
+}
+</script>
+""", unsafe_allow_html=True)
+
 # Main content
 current_chat = st.session_state.chats[st.session_state.current_chat_id]
-current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
 # Header
 st.title("🤖 AI Chatbot")
@@ -388,38 +488,44 @@ with chat_container:
                 <div class="message-header">
                     <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
                     <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
+                        <button class="action-btn" onclick="copyToClipboard('{message['content'].replace("'", "\\'")}')">📋</button>
                     </div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
             """, unsafe_allow_html=True)
         else:
+            # Tambahkan tombol regenerate hanya untuk pesan AI terakhir
+            is_last_ai_message = (i == len(current_chat["messages"]) - 1 and 
+                                 current_chat["messages"][-1]["role"] == "assistant")
+            
+            regenerate_btn = ""
+            if is_last_ai_message:
+                regenerate_btn = '<div class="message-footer"><button class="footer-btn" onclick="regenerateResponse()">🔄</button></div>'
+            
             st.markdown(f"""
             <div class="assistant-message">
                 <div class="message-header">
                     <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
                     <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
+                        <button class="action-btn" onclick="copyToClipboard('{message['content'].replace("'", "\\'")}')">📋</button>
                     </div>
                 </div>
                 <div>{message["content"]}</div>
+                {regenerate_btn}
             </div>
             """, unsafe_allow_html=True)
 
-# Tombol regenerate untuk pesan AI terakhir
-if (current_chat["messages"] and 
-    current_chat["messages"][-1]["role"] == "assistant"):
-    
-    col1, col2, col3 = st.columns([1, 1, 1])
-    with col2:
-        if st.button("🔄 Regenerate Response", key="regenerate_btn", 
-                   help="Generate ulang respons terakhir", use_container_width=True):
-            st.session_state.regenerate_last = True
-            st.rerun()
-
 # Input chat di bagian bawah
 st.markdown("---")
+
+# Check for regenerate trigger
+if st.button("🔄 Regenerate", key="regen_trigger", help="Generate ulang respons terakhir"):
+    if (current_chat["messages"] and 
+        current_chat["messages"][-1]["role"] == "assistant"):
+        st.session_state.regenerate_last = True
+        st.rerun()
+
 user_input = st.chat_input("Ketik pesan Anda di sini...")
 
 # Handle regenerate
@@ -438,7 +544,7 @@ if st.session_state.regenerate_last:
                 break
         
         if last_user_message:
-            user_input = last_user_message  # Set sebagai input untuk diproses
+            user_input = last_user_message
 
 if user_input:
     # Jika bukan regenerate, tambahkan pesan user baru
@@ -457,50 +563,25 @@ if user_input:
             else:
                 current_chat["title"] = user_input
         
-        # Tampilkan pesan user
-        with chat_container:
-            timestamp = user_message["timestamp"].strftime("%H:%M")
-            st.markdown(f"""
-            <div class="user-message">
-                <div class="message-header">
-                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{user_input.replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{user_input}</div>
-            </div>
-            """, unsafe_allow_html=True)
+        # Refresh untuk tampilkan pesan user
+        st.rerun()
     
     # Dapatkan respons dari AI dengan streaming
     response_placeholder = st.empty()
     
-    try:
-        # Siapkan riwayat percakapan untuk API
-        messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
-        for msg in current_chat["messages"]:
-            messages_for_api.append({
-                "role": msg["role"],
-                "content": msg["content"]
-            })
-        
-        payload = {
-            "model": current_model,
-            "messages": messages_for_api
-        }
-        
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
-        
-        if response.status_code == 200:
-            bot_reply = response.json()['choices'][0]['message']['content']
-        else:
-            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
-            
-    except Exception as e:
-        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
+    # Siapkan riwayat percakapan untuk API
+    messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
+    for msg in current_chat["messages"]:
+        messages_for_api.append({
+            "role": msg["role"],
+            "content": msg["content"]
+        })
     
-    # Stream response
-    stream_response(bot_reply, response_placeholder)
+    # Dapatkan respons AI dengan streaming
+    bot_reply = get_ai_response_streaming(messages_for_api, response_placeholder)
+    
+    # Tampilkan hasil final
+    display_message_with_typing(bot_reply, response_placeholder, is_final=True)
     
     # Tambahkan respons AI ke chat history
     ai_message = {
@@ -511,6 +592,7 @@ if user_input:
     current_chat["messages"].append(ai_message)
     
     # Rerun untuk update tampilan
+    time.sleep(0.5)  # Beri waktu sebentar untuk melihat hasil
     st.rerun()
 
 # Footer

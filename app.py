@@ -77,6 +77,25 @@ st.markdown("""
         --secondary-text-color: #8b949e;
         --hover-color: #21262d;
     }
+
+    /* Force override for dark theme */
+    [data-testid="stApp"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
+    }
+
+    [data-testid="stApp"][data-theme="light"] {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
+    }
     
     .message-header {
         display: flex;
@@ -123,7 +142,7 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
     }
     
@@ -133,7 +152,7 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 12px;
+        font-size: 10px;
         font-weight: bold;
     }
     
@@ -185,6 +204,20 @@ st.markdown("""
         background-color: var(--background-color-secondary);
         border-color: #3b82f6;
     }
+
+    .regenerate-btn {
+        display: none;
+        position: absolute;
+        bottom: -30px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -222,6 +255,9 @@ if "current_chat_id" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = "Deepseek v3"
 
+if "regenerate_last" not in st.session_state:
+    st.session_state.regenerate_last = False
+
 # Fungsi untuk streaming response
 def stream_response(text, placeholder):
     """Simulasi streaming text seperti Claude"""
@@ -250,14 +286,13 @@ def stream_response(text, placeholder):
                     <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
                     <div class="message-actions">
                         <button class="action-btn" onclick="navigator.clipboard.writeText('{text.replace("'", "\\'")}')">📋 Copy</button>
-                        <button class="action-btn" onclick="location.reload()">🔄 Regenerate</button>
                     </div>
                 </div>
                 <div>{displayed_text.strip()}</div>
             </div>
             """, unsafe_allow_html=True)
         
-        time.sleep(0.05)  # Delay untuk efek mengetik
+        time.sleep(0.03)  # Delay untuk efek mengetik
 
 # Sidebar
 with st.sidebar:
@@ -342,16 +377,6 @@ st.markdown("---")
 # Container untuk chat
 chat_container = st.container()
 
-# Add JavaScript for regenerate functionality
-st.markdown("""
-<script>
-function regenerateResponse(messageIndex) {
-    // This will be handled by Streamlit's rerun mechanism
-    window.location.reload();
-}
-</script>
-""", unsafe_allow_html=True)
-
 with chat_container:
     # Tampilkan riwayat chat
     for i, message in enumerate(current_chat["messages"]):
@@ -361,7 +386,7 @@ with chat_container:
             st.markdown(f"""
             <div class="user-message">
                 <div class="message-header">
-                    <span><div class="user-avatar message-avatar">You</div><strong>Anda</strong> • {timestamp}</span>
+                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
                     <div class="message-actions">
                         <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
                     </div>
@@ -370,111 +395,82 @@ with chat_container:
             </div>
             """, unsafe_allow_html=True)
         else:
-            # Tambahkan tombol regenerate hanya untuk pesan AI terakhir
-            is_last_ai_message = (i == len(current_chat["messages"]) - 1 and 
-                                message["role"] == "assistant")
-            
-            regenerate_btn = ""
-            if is_last_ai_message:
-                regenerate_btn = f'<button class="action-btn" onclick="document.getElementById(\'regenerate_{i}\').click()">🔄 Regenerate</button>'
-            
             st.markdown(f"""
             <div class="assistant-message">
                 <div class="message-header">
                     <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
                     <div class="message-actions">
                         <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
-                        {regenerate_btn}
                     </div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
             """, unsafe_allow_html=True)
-            
-            # Hidden button untuk regenerate
-            if is_last_ai_message:
-                if st.button("Regenerate", key=f"regenerate_{i}", type="primary", 
-                           help="Generate ulang respons terakhir"):
-                    # Hapus pesan AI terakhir dan regenerate
-                    if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
-                        current_chat["messages"].pop()
-                        
-                        # Ambil pesan user terakhir
-                        last_user_message = None
-                        for msg in reversed(current_chat["messages"]):
-                            if msg["role"] == "user":
-                                last_user_message = msg["content"]
-                                break
-                        
-                        if last_user_message:
-                            # Regenerate response
-                            with st.spinner("Regenerating response..."):
-                                try:
-                                    messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
-                                    for msg in current_chat["messages"]:
-                                        messages_for_api.append({
-                                            "role": msg["role"],
-                                            "content": msg["content"]
-                                        })
-                                    
-                                    payload = {
-                                        "model": current_model,
-                                        "messages": messages_for_api
-                                    }
-                                    
-                                    response = requests.post(API_URL, headers=HEADERS, json=payload)
-                                    
-                                    if response.status_code == 200:
-                                        bot_reply = response.json()['choices'][0]['message']['content']
-                                    else:
-                                        bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
-                                        
-                                except Exception as e:
-                                    bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
-                                
-                                # Tambahkan respons baru
-                                ai_message = {
-                                    "role": "assistant",
-                                    "content": bot_reply,
-                                    "timestamp": datetime.now()
-                                }
-                                current_chat["messages"].append(ai_message)
-                                st.rerun()
+
+# Tombol regenerate untuk pesan AI terakhir
+if (current_chat["messages"] and 
+    current_chat["messages"][-1]["role"] == "assistant"):
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🔄 Regenerate Response", key="regenerate_btn", 
+                   help="Generate ulang respons terakhir", use_container_width=True):
+            st.session_state.regenerate_last = True
+            st.rerun()
 
 # Input chat di bagian bawah
 st.markdown("---")
 user_input = st.chat_input("Ketik pesan Anda di sini...")
 
+# Handle regenerate
+if st.session_state.regenerate_last:
+    st.session_state.regenerate_last = False
+    
+    # Hapus pesan AI terakhir
+    if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
+        current_chat["messages"].pop()
+        
+        # Ambil pesan user terakhir untuk regenerate
+        last_user_message = None
+        for msg in reversed(current_chat["messages"]):
+            if msg["role"] == "user":
+                last_user_message = msg["content"]
+                break
+        
+        if last_user_message:
+            user_input = last_user_message  # Set sebagai input untuk diproses
+
 if user_input:
-    # Tambahkan pesan user
-    user_message = {
-        "role": "user", 
-        "content": user_input,
-        "timestamp": datetime.now()
-    }
-    current_chat["messages"].append(user_message)
-    
-    # Update title chat jika ini pesan pertama
-    if len(current_chat["messages"]) == 1:
-        if len(user_input) > 30:
-            current_chat["title"] = user_input[:30] + "..."
-        else:
-            current_chat["title"] = user_input
-    
-    # Tampilkan pesan user
-    with chat_container:
-        timestamp = user_message["timestamp"].strftime("%H:%M")
-        st.markdown(f"""
-        <div class="user-message">
-            <div class="message-header">
-                <span><div class="user-avatar message-avatar">You</div><strong>Anda</strong> • {timestamp}</span>
-                <div class="message-actions">
-                    <button class="action-btn" onclick="navigator.clipboard.writeText('{user_input.replace("'", "\\'")}')">📋 Copy</button>
+    # Jika bukan regenerate, tambahkan pesan user baru
+    if not st.session_state.regenerate_last:
+        user_message = {
+            "role": "user", 
+            "content": user_input,
+            "timestamp": datetime.now()
+        }
+        current_chat["messages"].append(user_message)
+        
+        # Update title chat jika ini pesan pertama
+        if len([msg for msg in current_chat["messages"] if msg["role"] == "user"]) == 1:
+            if len(user_input) > 30:
+                current_chat["title"] = user_input[:30] + "..."
+            else:
+                current_chat["title"] = user_input
+        
+        # Tampilkan pesan user
+        with chat_container:
+            timestamp = user_message["timestamp"].strftime("%H:%M")
+            st.markdown(f"""
+            <div class="user-message">
+                <div class="message-header">
+                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
+                    <div class="message-actions">
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('{user_input.replace("'", "\\'")}')">📋 Copy</button>
+                    </div>
                 </div>
+                <div>{user_input}</div>
             </div>
-            <div>{user_input}</div>
-        </div>
-        """, unsafe_allow_html=True)
+            """, unsafe_allow_html=True)
     
     # Dapatkan respons dari AI dengan streaming
     response_placeholder = st.empty()

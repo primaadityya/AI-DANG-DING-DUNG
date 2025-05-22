@@ -13,170 +13,210 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS yang diperbaiki
+# Custom CSS untuk styling yang responsive terhadap dark/light theme
 st.markdown("""
 <style>
-    /* Reset dan base styling */
-    .stApp {
-        max-width: none !important;
-    }
-    
-    .main .block-container {
-        padding-top: 1rem;
-        max-width: 1200px;
+    .main-content {
+        max-width: 800px;
         margin: 0 auto;
+        padding: 0 20px;
     }
     
-    /* Message styling */
     .user-message {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
-        padding: 12px 16px;
-        border-radius: 18px 18px 4px 18px;
-        margin: 8px 0 8px 25%;
+        background-color: var(--background-color-secondary);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-left: 20%;
         position: relative;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-        word-wrap: break-word;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color);
     }
     
     .assistant-message {
-        background: #f1f3f4;
-        color: #202124;
-        padding: 12px 16px;
-        border-radius: 18px 18px 18px 4px;
-        margin: 8px 25% 8px 0;
+        background-color: var(--background-color);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-right: 20%;
         position: relative;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        word-wrap: break-word;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    /* Light theme variables */
+    :root {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
+    }
+
+    /* Dark theme variables */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background-color: #1e1e1e;
+            --background-color-secondary: #2d2d2d;
+            --text-color: #fafafa;
+            --border-color: #404040;
+            --secondary-text-color: #a1a1a1;
+            --hover-color: #404040;
+        }
+    }
+
+    /* Streamlit dark theme detection */
+    .stApp[data-theme="dark"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
+    }
+
+    /* Force override for dark theme */
+    [data-testid="stApp"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
+    }
+
+    [data-testid="stApp"][data-theme="light"] {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
     }
     
-    /* Dark mode support */
-    [data-theme="dark"] .assistant-message {
-        background: #2d2d2d;
-        color: #e8eaed;
-    }
-    
-    /* Message header */
-    .msg-header {
+    .message-header {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        margin-bottom: 6px;
-        font-size: 11px;
-        opacity: 0.7;
+        margin-bottom: 8px;
+        font-size: 12px;
+        color: var(--secondary-text-color);
     }
     
-    .msg-info {
+    .message-actions {
         display: flex;
-        align-items: center;
-        gap: 6px;
-    }
-    
-    .msg-actions {
-        display: flex;
-        gap: 4px;
+        gap: 8px;
         align-items: center;
     }
     
-    /* Avatar styling */
-    .avatar {
-        width: 16px;
-        height: 16px;
+    .action-btn {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        color: var(--secondary-text-color);
+        font-size: 12px;
+        transition: background-color 0.2s;
+    }
+    
+    .action-btn:hover {
+        background-color: var(--hover-color);
+    }
+    
+    .message-avatar {
+        width: 24px;
+        height: 24px;
         border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 8px;
-        font-weight: bold;
-        color: white;
+        display: inline-block;
+        margin-right: 8px;
+        vertical-align: middle;
     }
     
     .user-avatar {
-        background: rgba(255,255,255,0.3);
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
     }
     
     .ai-avatar {
-        background: linear-gradient(135deg, #ff6b6b, #ee5a24);
-    }
-    
-    /* Button styling */
-    .msg-btn {
-        background: rgba(255,255,255,0.2);
-        border: none;
-        border-radius: 4px;
-        padding: 2px 6px;
-        font-size: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        opacity: 0.7;
-    }
-    
-    .msg-btn:hover {
-        opacity: 1;
-        background: rgba(255,255,255,0.3);
-    }
-    
-    /* Message footer for regenerate */
-    .msg-footer {
-        margin-top: 8px;
-        text-align: right;
-    }
-    
-    .regen-btn {
-        background: rgba(0,0,0,0.1);
-        border: none;
-        border-radius: 4px;
-        padding: 2px 6px;
-        font-size: 10px;
-        cursor: pointer;
-        transition: all 0.2s;
-        opacity: 0.6;
-    }
-    
-    .regen-btn:hover {
-        opacity: 1;
-        background: rgba(0,0,0,0.2);
-    }
-    
-    /* Typing animation */
-    .typing-indicator {
-        display: inline-flex;
+        background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+        display: flex;
         align-items: center;
-        gap: 2px;
+        justify-content: center;
+        color: white;
+        font-size: 10px;
+        font-weight: bold;
+    }
+    
+    .typing-animation {
+        display: inline-block;
     }
     
     .typing-dot {
+        display: inline-block;
         width: 4px;
         height: 4px;
         border-radius: 50%;
-        background: currentColor;
-        animation: typing 1.4s ease-in-out infinite;
+        background-color: var(--secondary-text-color);
+        margin: 0 1px;
+        animation: typing 1.4s infinite ease-in-out;
     }
     
-    .typing-dot:nth-child(1) { animation-delay: 0s; }
-    .typing-dot:nth-child(2) { animation-delay: 0.2s; }
-    .typing-dot:nth-child(3) { animation-delay: 0.4s; }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
     
     @keyframes typing {
-        0%, 60%, 100% { opacity: 0.3; transform: scale(0.8); }
-        30% { opacity: 1; transform: scale(1); }
+        0%, 80%, 100% { transform: scale(0.8); opacity: 0.5; }
+        40% { transform: scale(1.2); opacity: 1; }
     }
     
-    /* Hide Streamlit elements */
-    .stDeployButton {
+    .model-selector {
+        margin: 15px 0;
+        padding: 10px;
+        border-radius: 8px;
+        background-color: var(--background-color-secondary);
+        border: 1px solid var(--border-color);
+    }
+    
+    .chat-item {
+        padding: 12px;
+        border-radius: 6px;
+        cursor: pointer;
+        margin-bottom: 4px;
+        border: 1px solid transparent;
+        background-color: var(--background-color);
+        color: var(--text-color);
+    }
+    
+    .chat-item:hover {
+        background-color: var(--hover-color);
+    }
+    
+    .chat-item.active {
+        background-color: var(--background-color-secondary);
+        border-color: #3b82f6;
+    }
+
+    .regenerate-btn {
         display: none;
-    }
-    
-    #MainMenu {
-        visibility: hidden;
-    }
-    
-    footer {
-        visibility: hidden;
-    }
-    
-    header {
-        visibility: hidden;
+        position: absolute;
+        bottom: -30px;
+        right: 20px;
+        background: #3b82f6;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -215,99 +255,51 @@ if "current_chat_id" not in st.session_state:
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = "Deepseek v3"
 
-if "is_typing" not in st.session_state:
-    st.session_state.is_typing = False
+if "regenerate_last" not in st.session_state:
+    st.session_state.regenerate_last = False
 
-# Fungsi untuk menampilkan pesan
-def display_message(message, msg_type, timestamp, is_last_ai=False, is_typing=False):
-    """Display message dengan styling yang konsisten"""
-    if msg_type == "user":
-        content = f"""
-        <div class="user-message">
-            <div class="msg-header">
-                <div class="msg-info">
-                    <div class="avatar user-avatar">U</div>
-                    <span>Anda • {timestamp}</span>
-                </div>
-                <div class="msg-actions">
-                    <button class="msg-btn" onclick="copyText('{message.replace("'", "\\'")}')">📋</button>
-                </div>
-            </div>
-            <div>{message}</div>
-        </div>
-        """
-    else:
-        typing_indicator = ""
-        if is_typing:
-            typing_indicator = ' <span class="typing-indicator"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
-        
-        regen_btn = ""
-        if is_last_ai and not is_typing:
-            regen_btn = '<div class="msg-footer"><button class="regen-btn" onclick="regenerateResponse()">🔄</button></div>'
-        
-        content = f"""
-        <div class="assistant-message">
-            <div class="msg-header">
-                <div class="msg-info">
-                    <div class="avatar ai-avatar">AI</div>
-                    <span>AI Assistant • {timestamp}</span>
-                </div>
-                <div class="msg-actions">
-                    <button class="msg-btn" onclick="copyText('{message.replace("'", "\\'")}')">📋</button>
-                </div>
-            </div>
-            <div>{message}{typing_indicator}</div>
-            {regen_btn}
-        </div>
-        """
-    
-    return content
-
-# Fungsi untuk simulasi typing effect
-def simulate_typing_effect(text, placeholder):
-    """Simulasi mengetik kata demi kata"""
+# Fungsi untuk streaming response
+def stream_response(text, placeholder):
+    """Simulasi streaming text seperti Claude"""
     words = text.split()
-    current_text = ""
+    displayed_text = ""
     
     for i, word in enumerate(words):
-        current_text += word + " "
-        timestamp = datetime.now().strftime("%H:%M")
+        displayed_text += word + " "
         
-        # Tampilkan dengan typing indicator jika belum selesai
-        is_typing = (i < len(words) - 1)
-        content = display_message(current_text.strip(), "assistant", timestamp, True, is_typing)
-        placeholder.markdown(content, unsafe_allow_html=True)
+        # Update placeholder dengan animasi typing
+        if i < len(words) - 1:
+            typing_animation = '<span class="typing-animation"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></span>'
+            placeholder.markdown(f"""
+            <div class="assistant-message">
+                <div class="message-header">
+                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
+                </div>
+                <div>{displayed_text}{typing_animation}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            # Final message tanpa typing animation
+            placeholder.markdown(f"""
+            <div class="assistant-message">
+                <div class="message-header">
+                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {datetime.now().strftime('%H:%M')}</span>
+                    <div class="message-actions">
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('{text.replace("'", "\\'")}')">📋 Copy</button>
+                    </div>
+                </div>
+                <div>{displayed_text.strip()}</div>
+            </div>
+            """, unsafe_allow_html=True)
         
-        # Delay untuk efek mengetik
-        time.sleep(0.1)
-    
-    return current_text.strip()
-
-# JavaScript untuk interaksi
-st.markdown("""
-<script>
-function copyText(text) {
-    navigator.clipboard.writeText(text).then(function() {
-        console.log('Text copied to clipboard');
-    });
-}
-
-function regenerateResponse() {
-    // Trigger regenerate melalui session state
-    window.parent.postMessage({
-        type: 'streamlit:setComponentValue',
-        value: {action: 'regenerate'}
-    }, '*');
-}
-</script>
-""", unsafe_allow_html=True)
+        time.sleep(0.03)  # Delay untuk efek mengetik
 
 # Sidebar
 with st.sidebar:
     st.title("💬 Chat History")
     
     # Tombol chat baru
-    if st.button("➕ Chat Baru", use_container_width=True):
+    if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
         chat_id = str(uuid.uuid4())
         st.session_state.current_chat_id = chat_id
         st.session_state.chats[chat_id] = {
@@ -317,7 +309,7 @@ with st.sidebar:
         }
         st.rerun()
     
-    st.divider()
+    st.markdown("---")
     
     # Daftar chat
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
@@ -326,17 +318,22 @@ with st.sidebar:
         
         with col1:
             # Buat preview dari pesan pertama user
-            title = "Chat Baru"
-            if chat_data["messages"]:
+            title = chat_data["title"]
+            if chat_data["messages"] and len(chat_data["messages"]) > 0:
                 first_user_msg = next((msg["content"] for msg in chat_data["messages"] 
                                      if msg["role"] == "user"), "Chat Baru")
-                title = first_user_msg[:30] + "..." if len(first_user_msg) > 30 else first_user_msg
+                if len(first_user_msg) > 30:
+                    title = first_user_msg[:30] + "..."
+                else:
+                    title = first_user_msg
+            
+            is_active = chat_id == st.session_state.current_chat_id
             
             if st.button(
                 title,
                 key=f"chat_{chat_id}",
-                help=f"Dibuat: {chat_data['created_at'].strftime('%d/%m/%Y %H:%M')}",
-                type="primary" if chat_id == st.session_state.current_chat_id else "secondary",
+                help=f"Buka chat - {chat_data['created_at'].strftime('%d/%m/%Y %H:%M')}",
+                type="primary" if is_active else "secondary",
                 use_container_width=True
             ):
                 st.session_state.current_chat_id = chat_id
@@ -347,17 +344,21 @@ with st.sidebar:
                 if len(st.session_state.chats) > 1:
                     del st.session_state.chats[chat_id]
                     if chat_id == st.session_state.current_chat_id:
+                        # Pilih chat pertama yang tersedia
                         st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
                     st.rerun()
+                else:
+                    st.error("Tidak bisa menghapus chat terakhir!")
 
-    st.divider()
+    st.markdown("---")
     
     # Model selector
-    st.subheader("🤖 Model AI")
+    st.subheader("🤖 Pilih Model")
     selected_model = st.selectbox(
-        "Pilih model:",
+        "Model AI:",
         options=list(AVAILABLE_MODELS.keys()),
-        index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model)
+        index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model),
+        key="model_selector"
     )
     
     if selected_model != st.session_state.selected_model:
@@ -365,68 +366,117 @@ with st.sidebar:
         st.rerun()
 
 # Main content
-st.title("🤖 AI Chatbot")
-st.caption(f"Model: {st.session_state.selected_model} | Provider: OpenRouter")
-
 current_chat = st.session_state.chats[st.session_state.current_chat_id]
+current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
-# Tampilkan chat history
+# Header
+st.title("🤖 AI Chatbot")
+st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
+st.markdown("---")
+
+# Container untuk chat
 chat_container = st.container()
+
 with chat_container:
+    # Tampilkan riwayat chat
     for i, message in enumerate(current_chat["messages"]):
         timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
-        is_last_ai = (i == len(current_chat["messages"]) - 1 and message["role"] == "assistant")
         
-        content = display_message(
-            message["content"], 
-            message["role"], 
-            timestamp, 
-            is_last_ai
-        )
-        st.markdown(content, unsafe_allow_html=True)
+        if message["role"] == "user":
+            st.markdown(f"""
+            <div class="user-message">
+                <div class="message-header">
+                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
+                    <div class="message-actions">
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
+                    </div>
+                </div>
+                <div>{message["content"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        else:
+            st.markdown(f"""
+            <div class="assistant-message">
+                <div class="message-header">
+                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
+                    <div class="message-actions">
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
+                    </div>
+                </div>
+                <div>{message["content"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
-# Tombol regenerate terpisah untuk debugging
-col1, col2, col3 = st.columns([1, 1, 1])
-with col2:
-    if st.button("🔄 Regenerate", key="manual_regen", help="Generate ulang respons terakhir"):
-        if (current_chat["messages"] and 
-            current_chat["messages"][-1]["role"] == "assistant"):
-            # Hapus pesan AI terakhir
-            current_chat["messages"].pop()
+# Tombol regenerate untuk pesan AI terakhir
+if (current_chat["messages"] and 
+    current_chat["messages"][-1]["role"] == "assistant"):
+    
+    col1, col2, col3 = st.columns([1, 1, 1])
+    with col2:
+        if st.button("🔄 Regenerate Response", key="regenerate_btn", 
+                   help="Generate ulang respons terakhir", use_container_width=True):
+            st.session_state.regenerate_last = True
             st.rerun()
 
-# Input area
-user_input = st.chat_input("Ketik pesan Anda...")
+# Input chat di bagian bawah
+st.markdown("---")
+user_input = st.chat_input("Ketik pesan Anda di sini...")
 
-# Proses input user
+# Handle regenerate
+if st.session_state.regenerate_last:
+    st.session_state.regenerate_last = False
+    
+    # Hapus pesan AI terakhir
+    if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
+        current_chat["messages"].pop()
+        
+        # Ambil pesan user terakhir untuk regenerate
+        last_user_message = None
+        for msg in reversed(current_chat["messages"]):
+            if msg["role"] == "user":
+                last_user_message = msg["content"]
+                break
+        
+        if last_user_message:
+            user_input = last_user_message  # Set sebagai input untuk diproses
+
 if user_input:
-    # Tambahkan pesan user
-    user_message = {
-        "role": "user",
-        "content": user_input,
-        "timestamp": datetime.now()
-    }
-    current_chat["messages"].append(user_message)
+    # Jika bukan regenerate, tambahkan pesan user baru
+    if not st.session_state.regenerate_last:
+        user_message = {
+            "role": "user", 
+            "content": user_input,
+            "timestamp": datetime.now()
+        }
+        current_chat["messages"].append(user_message)
+        
+        # Update title chat jika ini pesan pertama
+        if len([msg for msg in current_chat["messages"] if msg["role"] == "user"]) == 1:
+            if len(user_input) > 30:
+                current_chat["title"] = user_input[:30] + "..."
+            else:
+                current_chat["title"] = user_input
+        
+        # Tampilkan pesan user
+        with chat_container:
+            timestamp = user_message["timestamp"].strftime("%H:%M")
+            st.markdown(f"""
+            <div class="user-message">
+                <div class="message-header">
+                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
+                    <div class="message-actions">
+                        <button class="action-btn" onclick="navigator.clipboard.writeText('{user_input.replace("'", "\\'")}')">📋 Copy</button>
+                    </div>
+                </div>
+                <div>{user_input}</div>
+            </div>
+            """, unsafe_allow_html=True)
     
-    # Update judul chat
-    if len([msg for msg in current_chat["messages"] if msg["role"] == "user"]) == 1:
-        current_chat["title"] = user_input[:30] + "..." if len(user_input) > 30 else user_input
-    
-    # Refresh untuk menampilkan pesan user
-    st.rerun()
-
-# Proses respons AI jika ada pesan user tanpa respons
-if (current_chat["messages"] and 
-    current_chat["messages"][-1]["role"] == "user" and 
-    not st.session_state.is_typing):
-    
-    st.session_state.is_typing = True
-    
-    # Placeholder untuk respons AI
+    # Dapatkan respons dari AI dengan streaming
     response_placeholder = st.empty()
     
     try:
-        # Siapkan messages untuk API
+        # Siapkan riwayat percakapan untuk API
         messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
         for msg in current_chat["messages"]:
             messages_for_api.append({
@@ -434,8 +484,6 @@ if (current_chat["messages"] and
                 "content": msg["content"]
             })
         
-        # Panggil API
-        current_model = AVAILABLE_MODELS[st.session_state.selected_model]
         payload = {
             "model": current_model,
             "messages": messages_for_api
@@ -444,46 +492,34 @@ if (current_chat["messages"] and
         response = requests.post(API_URL, headers=HEADERS, json=payload)
         
         if response.status_code == 200:
-            ai_response = response.json()['choices'][0]['message']['content']
+            bot_reply = response.json()['choices'][0]['message']['content']
         else:
-            ai_response = f"⚠️ Error {response.status_code}: {response.text}"
-        
-        # Simulasi typing effect
-        final_response = simulate_typing_effect(ai_response, response_placeholder)
-        
-        # Simpan respons AI
-        ai_message = {
-            "role": "assistant",
-            "content": final_response,
-            "timestamp": datetime.now()
-        }
-        current_chat["messages"].append(ai_message)
-        
+            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
+            
     except Exception as e:
-        error_msg = f"⚠️ Terjadi kesalahan: {str(e)}"
-        timestamp = datetime.now().strftime("%H:%M")
-        content = display_message(error_msg, "assistant", timestamp, True)
-        response_placeholder.markdown(content, unsafe_allow_html=True)
-        
-        # Simpan error message
-        ai_message = {
-            "role": "assistant",
-            "content": error_msg,
-            "timestamp": datetime.now()
-        }
-        current_chat["messages"].append(ai_message)
+        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
     
-    finally:
-        st.session_state.is_typing = False
-        time.sleep(1)
-        st.rerun()
+    # Stream response
+    stream_response(bot_reply, response_placeholder)
+    
+    # Tambahkan respons AI ke chat history
+    ai_message = {
+        "role": "assistant",
+        "content": bot_reply,
+        "timestamp": datetime.now()
+    }
+    current_chat["messages"].append(ai_message)
+    
+    # Rerun untuk update tampilan
+    st.rerun()
 
 # Footer
-st.divider()
+st.markdown("---")
 st.markdown(
-    f"<div style='text-align: center; color: #666; font-size: 12px;'>"
+    "<div style='text-align: center; color: var(--secondary-text-color); font-size: 12px;'>"
+    f"Powered by {st.session_state.selected_model} via OpenRouter • "
     f"Total Chats: {len(st.session_state.chats)} • "
-    f"Messages: {len(current_chat['messages'])}"
-    f"</div>",
+    f"Messages in current chat: {len(current_chat['messages'])}"
+    "</div>",
     unsafe_allow_html=True
 )

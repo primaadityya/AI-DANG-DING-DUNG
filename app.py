@@ -29,80 +29,85 @@ st.markdown("""
     
     /* Styling untuk pesan dari user */
     .user-message {
-        background-color: var(--background-color-secondary);
-        color: var(--text-color);
+        background-color: #e3f2fd;
+        color: #1976d2;
         padding: 15px 20px;
         border-radius: 18px;
         margin: 10px 0;
         margin-left: 20%;
         position: relative;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid var(--border-color);
+        border: 1px solid #bbdefb;
     }
     
     /* Styling untuk pesan dari AI assistant */
     .assistant-message {
-        background-color: var(--background-color);
-        color: var(--text-color);
+        background-color: #f5f5f5;
+        color: #424242;
         padding: 15px 20px;
         border-radius: 18px;
         margin: 10px 0;
         margin-right: 20%;
         position: relative;
-        border: 1px solid var(--border-color);
+        border: 1px solid #e0e0e0;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* Variabel CSS untuk tema terang */
-    :root {
-        --background-color: #ffffff;
-        --background-color-secondary: #f0f2f6;
-        --text-color: #262730;
-        --border-color: #e1e5e9;
-        --secondary-text-color: #6b7280;
-        --hover-color: #f3f4f6;
+    /* Tema gelap - override untuk pesan user */
+    [data-testid="stApp"] .user-message {
+        background-color: #1e3a8a;
+        color: #dbeafe;
+        border-color: #3b82f6;
+    }
+    
+    /* Tema gelap - override untuk pesan AI */
+    [data-testid="stApp"] .assistant-message {
+        background-color: #374151;
+        color: #f9fafb;
+        border-color: #4b5563;
     }
 
-    /* Variabel CSS untuk tema gelap (deteksi otomatis) */
+    /* Deteksi tema gelap sistem */
     @media (prefers-color-scheme: dark) {
-        :root {
-            --background-color: #1e1e1e;
-            --background-color-secondary: #2d2d2d;
-            --text-color: #fafafa;
-            --border-color: #404040;
-            --secondary-text-color: #a1a1a1;
-            --hover-color: #404040;
+        .user-message {
+            background-color: #1e3a8a !important;
+            color: #dbeafe !important;
+            border-color: #3b82f6 !important;
+        }
+        
+        .assistant-message {
+            background-color: #374151 !important;
+            color: #f9fafb !important;
+            border-color: #4b5563 !important;
         }
     }
 
-    /* Override untuk tema gelap Streamlit */
-    .stApp[data-theme="dark"] {
-        --background-color: #0e1117;
-        --background-color-secondary: #262730;
-        --text-color: #fafafa;
-        --border-color: #30363d;
-        --secondary-text-color: #8b949e;
-        --hover-color: #21262d;
-    }
-
-    /* Force override untuk tema gelap */
-    [data-testid="stApp"] {
-        --background-color: #0e1117;
-        --background-color-secondary: #262730;
-        --text-color: #fafafa;
-        --border-color: #30363d;
-        --secondary-text-color: #8b949e;
-        --hover-color: #21262d;
-    }
-
-    /* Override untuk tema terang */
-    [data-testid="stApp"][data-theme="light"] {
-        --background-color: #ffffff;
-        --background-color-secondary: #f0f2f6;
+    /* Variabel CSS untuk tema */
+    :root {
         --text-color: #262730;
-        --border-color: #e1e5e9;
         --secondary-text-color: #6b7280;
+        --background-color-secondary: #f0f2f6;
+        --border-color: #e1e5e9;
         --hover-color: #f3f4f6;
+    }
+
+    /* Tema gelap */
+    [data-testid="stApp"] {
+        --text-color: #fafafa;
+        --secondary-text-color: #8b949e;
+        --background-color-secondary: #262730;
+        --border-color: #30363d;
+        --hover-color: #21262d;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --text-color: #fafafa;
+            --secondary-text-color: #8b949e;
+            --background-color-secondary: #262730;
+            --border-color: #30363d;
+            --hover-color: #21262d;
+        }
     }
     
     /* Header untuk setiap pesan (nama) */
@@ -168,7 +173,6 @@ st.markdown("""
         cursor: pointer;
         margin-bottom: 4px;
         border: 1px solid transparent;
-        background-color: var(--background-color);
         color: var(--text-color);
     }
     
@@ -192,16 +196,31 @@ st.markdown("""
 
     /* Styling untuk loading message */
     .loading-message {
-        background-color: var(--background-color);
-        color: var(--secondary-text-color);
+        background-color: #fff3cd;
+        color: #856404;
         padding: 15px 20px;
         border-radius: 18px;
         margin: 10px 0;
         margin-right: 20%;
         position: relative;
-        border: 1px solid var(--border-color);
+        border: 1px solid #ffeaa7;
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         font-style: italic;
+    }
+
+    /* Tema gelap untuk loading message */
+    [data-testid="stApp"] .loading-message {
+        background-color: #92400e;
+        color: #fef3c7;
+        border-color: #d97706;
+    }
+
+    @media (prefers-color-scheme: dark) {
+        .loading-message {
+            background-color: #92400e !important;
+            color: #fef3c7 !important;
+            border-color: #d97706 !important;
+        }
     }
 </style>
 """, unsafe_allow_html=True)
@@ -495,38 +514,31 @@ user_input = st.chat_input(f"Ketik pesan {st.session_state.user_name} disini..."
 if st.session_state.regenerate_last:
     st.session_state.regenerate_last = False
     
-    # Hapus pesan AI terakhir
+    # Hapus pesan AI terakhir saja, tidak menambah pesan user baru
     if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
         current_chat["messages"].pop()
         
-        # Ambil pesan user terakhir untuk regenerate
-        last_user_message = None
-        for msg in reversed(current_chat["messages"]):
-            if msg["role"] == "user":
-                last_user_message = msg["content"]
-                break
-        
-        if last_user_message:
-            user_input = last_user_message  # Set sebagai input untuk diproses
+    # Set loading state untuk regenerate
+    st.session_state.is_loading = True
+    st.rerun()
 
 # ===========================================
 # PROSES INPUT USER & PANGGIL API
 # ===========================================
 if user_input:
-    # Jika bukan regenerate, tambahkan pesan user baru
-    if not st.session_state.regenerate_last:
-        user_message = {
-            "role": "user", 
-            "content": user_input
-        }
-        current_chat["messages"].append(user_message)
-        
-        # Update title chat jika ini pesan pertama
-        if len([msg for msg in current_chat["messages"] if msg["role"] == "user"]) == 1:
-            if len(user_input) > 30:
-                current_chat["title"] = user_input[:30] + "..."
-            else:
-                current_chat["title"] = user_input
+    # Tambahkan pesan user baru hanya jika ini bukan regenerate
+    user_message = {
+        "role": "user", 
+        "content": user_input
+    }
+    current_chat["messages"].append(user_message)
+    
+    # Update title chat jika ini pesan pertama
+    if len([msg for msg in current_chat["messages"] if msg["role"] == "user"]) == 1:
+        if len(user_input) > 30:
+            current_chat["title"] = user_input[:30] + "..."
+        else:
+            current_chat["title"] = user_input
     
     # Set loading state
     st.session_state.is_loading = True

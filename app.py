@@ -311,18 +311,11 @@ if not st.session_state.user_name:
     
     with col2:
         st.markdown("""
-        <div style='
-            background-color: var(--background-color-secondary);
-            padding: 25px;
-            border-radius: 10px;
-            border: 1px solid var(--border-color);
-            text-align: center;
-            margin-bottom: 20px;
-            color: var(--text-color);
-        '>
+        <div style='background-color: var(--background-color-secondary); padding: 25px; border-radius: 10px; 
+                    border: 1px solid var(--border-color); text-align: center; margin-bottom: 20px;'>
             <h3 style='margin-top: 0; color: var(--text-color);'>👋 Perkenalkan diri Kamu</h3>
             <p style='color: var(--secondary-text-color); margin-bottom: 20px;'>
-            Masukkan nama Kamu untuk pengalaman chat yang lebih personal
+                Masukkan nama Kamu untuk pengalaman chat yang lebih personal
             </p>
         </div>
         """, unsafe_allow_html=True)
@@ -467,10 +460,11 @@ with chat_container:
     
     # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
+        
         # Tampilkan pesan dari user dengan nama yang dipersonalisasi
         if message["role"] == "user":
             st.markdown(f"""
-            <div class="user-message" style="background-color: var(--user-bubble-bg); color: var(--user-bubble-color); border: 1px solid var(--user-bubble-border);">
+            <div class="user-message">
                 <div class="message-header">
                     <div class="user-avatar message-avatar">👤</div>
                     <div class="message-name">{st.session_state.user_name}</div>
@@ -481,7 +475,7 @@ with chat_container:
         # Tampilkan pesan dari AI
         else:
             st.markdown(f"""
-            <div class="assistant-message" style="background-color: var(--assistant-bubble-bg); color: var(--assistant-bubble-color); border: 1px solid var(--assistant-bubble-border);">
+            <div class="assistant-message">
                 <div class="message-header">
                     <div class="ai-avatar message-avatar">🤖</div>
                     <div class="message-name">Pouring</div>
@@ -493,7 +487,7 @@ with chat_container:
     # Tampilkan loading message jika sedang memproses
     if st.session_state.is_loading:
         st.markdown(f"""
-        <div class="loading-message" style="background-color: var(--background-color-secondary); color: var(--text-color); border: 1px solid var(--border-color);">
+        <div class="loading-message">
             <div class="message-header">
                 <div class="ai-avatar message-avatar">🤖</div>
                 <div class="message-name">Pouring</div>

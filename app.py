@@ -265,16 +265,7 @@ if "regenerate_last" not in st.session_state:
 # ===========================================
 # MODAL INPUT NAMA USER
 # ===========================================
-if not st.session_state.user_name:
-    st.markdown("""
-    <div class="username-modal">
-        <div class="username-modal-content">
-            <h2>🤖 Selamat datang di PouringGPT!</h2>
-            <p>Silakan masukkan nama Anda untuk memulai percakapan</p>
-        </div>
-    </div>
-    """, unsafe_allow_html=True)
-    
+
     # Container untuk input nama
     with st.container():
         st.markdown("<br><br><br>", unsafe_allow_html=True)

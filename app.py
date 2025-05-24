@@ -107,39 +107,17 @@ st.markdown("""
         --hover-color: #f3f4f6;
     }
     
-    /* Header untuk setiap pesan (waktu, nama, dll) */
+    /* Header untuk setiap pesan (waktu, nama) */
     .message-header {
         display: flex;
-        justify-content: space-between;
+        justify-content: flex-start;
         align-items: center;
         margin-bottom: 8px;
         font-size: 12px;
         color: var(--secondary-text-color);
     }
     
-    /* Container untuk tombol aksi (copy, dll) */
-    .message-actions {
-        display: flex;
-        gap: 8px;
-        align-items: center;
-    }
-    
-    /* Styling untuk tombol aksi */
-    .action-btn {
-        background: none;
-        border: none;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        color: var(--secondary-text-color);
-        font-size: 12px;
-        transition: background-color 0.2s;
-    }
-    
-    /* Efek hover untuk tombol aksi */
-    .action-btn:hover {
-        background-color: var(--hover-color);
-    }
+    /* Container untuk tombol aksi (dihapus karena tidak ada fitur copy) */
     
     /* Avatar lingkaran untuk pengguna dan AI */
     .message-avatar {
@@ -341,6 +319,36 @@ current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 # Header halaman utama
 st.title("🤖 AI Chatbot")
 st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
+st.markdown("---")
+
+# Container untuk menampilkan percakapan
+chat_container = st.container()
+
+with chat_container:
+    # Tampilkan semua pesan dalam chat yang aktif
+    for i, message in enumerate(current_chat["messages"]):
+        timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
+        
+        # Tampilkan pesan dari user
+        if message["role"] == "user":
+            st.markdown(f"""
+            <div class="user-message">
+                <div class="message-header">
+                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
+                </div>
+                <div>{message["content"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
+        # Tampilkan pesan dari AI
+        else:
+            st.markdown(f"""
+            <div class="assistant-message">
+                <div class="message-header">
+                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
+                </div>
+                <div>{message["content"]}</div>
+            </div>
+            """, unsafe_allow_html=True)
 
 # ===========================================
 # TOMBOL REGENERATE RESPONSE

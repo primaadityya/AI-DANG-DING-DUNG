@@ -28,6 +28,32 @@ st.markdown("""
         margin: 0 auto;
         padding: 0 20px;
     }
+    
+    /* Styling untuk pesan dari user */
+    .user-message {
+        background-color: var(--background-color-secondary);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-left: 20%;
+        position: relative;
+        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        border: 1px solid var(--border-color);
+    }
+    
+    /* Styling untuk pesan dari AI assistant */
+    .assistant-message {
+        background-color: var(--background-color);
+        color: var(--text-color);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-right: 20%;
+        position: relative;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
 
     /* Variabel CSS untuk tema terang */
     :root {
@@ -315,42 +341,6 @@ current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 # Header halaman utama
 st.title("🤖 AI Chatbot")
 st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
-st.markdown("---")
-
-# Container untuk menampilkan percakapan
-chat_container = st.container()
-
-with chat_container:
-    # Tampilkan semua pesan dalam chat yang aktif
-    for i, message in enumerate(current_chat["messages"]):
-        timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
-        
-        # Tampilkan pesan dari user
-        if message["role"] == "user":
-            st.markdown(f"""
-            <div class="user-message">
-                <div class="message-header">
-                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{message["content"]}</div>
-            </div>
-            """, unsafe_allow_html=True)
-        # Tampilkan pesan dari AI
-        else:
-            st.markdown(f"""
-            <div class="assistant-message">
-                <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
-                    <div class="message-actions">
-                        <button class="action-btn" onclick="navigator.clipboard.writeText('{message['content'].replace("'", "\\'")}')">📋 Copy</button>
-                    </div>
-                </div>
-                <div>{message["content"]}</div>
-            </div>
-            """, unsafe_allow_html=True)
 
 # ===========================================
 # TOMBOL REGENERATE RESPONSE

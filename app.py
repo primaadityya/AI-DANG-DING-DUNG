@@ -42,18 +42,6 @@ st.markdown("""
         border: 1px solid var(--border-color);
     }
     
-    # /* Styling untuk pesan dari AI assistant */
-    # .assistant-message {
-    #     background-color: var(--background-color);
-    #     color: var(--text-color);
-    #     padding: 15px 20px;
-    #     border-radius: 18px;
-    #     margin: 10px 0;
-    #     margin-right: 20%;
-    #     position: relative;
-    #     border: 1px solid var(--border-color);
-    #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    # }
 
     /* Variabel CSS untuk tema terang */
     :root {

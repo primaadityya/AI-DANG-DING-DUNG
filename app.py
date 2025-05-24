@@ -5,8 +5,6 @@ import streamlit as st
 import requests
 import uuid
 from datetime import datetime
-import hashlib
-import time
 
 # ===========================================
 # KONFIGURASI HALAMAN STREAMLIT
@@ -17,38 +15,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# ===========================================
-# FUNGSI UNTUK GENERATE USER SESSION ID UNIK
-# ===========================================
-def get_user_session_id():
-    """Generate unique session ID per user/browser"""
-    if "user_session_id" not in st.session_state:
-        # Buat ID unik berdasarkan timestamp dan random UUID
-        timestamp = str(time.time())
-        random_id = str(uuid.uuid4())
-        session_string = f"{timestamp}_{random_id}"
-        st.session_state.user_session_id = hashlib.md5(session_string.encode()).hexdigest()[:16]
-    return st.session_state.user_session_id
-
-# ===========================================
-# FUNGSI UNTUK MANAGE DATA PER USER
-# ===========================================
-def get_user_key(key_name):
-    """Get user-specific key for session state"""
-    session_id = get_user_session_id()
-    return f"{session_id}_{key_name}"
-
-def get_user_data(key_name, default_value=None):
-    """Get user-specific data from session state"""
-    user_key = get_user_key(key_name)
-    return st.session_state.get(user_key, default_value)
-
-def set_user_data(key_name, value):
-    """Set user-specific data to session state"""
-    user_key = get_user_key(key_name)
-    st.session_state[user_key] = value
-
 # ===========================================
 # CUSTOM CSS UNTUK STYLING TAMPILAN
 # ===========================================
@@ -273,63 +239,6 @@ HEADERS = {
 }
 # URL endpoint API OpenRouter
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
-
-# ===========================================
-# FUNGSI UTILITAS UNTUK TIMESTAMP
-# ===========================================
-def get_current_time():
-    """Mendapatkan waktu sekarang dalam format datetime"""
-    return datetime.now()
-
-def format_time(dt):
-    """Format waktu menjadi HH:MM"""
-    if isinstance(dt, str):
-        # Jika string, parse dulu
-        try:
-            dt = datetime.fromisoformat(dt)
-        except:
-            return datetime.now().strftime("%H:%M")
-    return dt.strftime("%H:%M")
-
-# ===========================================
-# INISIALISASI DATA USER DENGAN SESSION ID
-# ===========================================
-# Generate unique session ID untuk user ini
-session_id = get_user_session_id()
-
-# Inisialisasi nama user (per session ID)
-if get_user_data("user_name") is None:
-    set_user_data("user_name", "")
-
-# Inisialisasi dictionary untuk menyimpan semua chat (per session ID)
-if get_user_data("chats") is None:
-    set_user_data("chats", {})
-    
-# Inisialisasi chat ID yang sedang aktif (per session ID)
-user_chats = get_user_data("chats", {})
-current_chat_id = get_user_data("current_chat_id")
-
-if current_chat_id is None or current_chat_id not in user_chats:
-    chat_id = str(uuid.uuid4())
-    set_user_data("current_chat_id", chat_id)
-    user_chats[chat_id] = {
-        "title": "Chat Baru",
-        "messages": [],
-        "created_at": get_current_time()
-    }
-    set_user_data("chats", user_chats)
-
-# Inisialisasi model yang dipilih (per session ID)
-if get_user_data("selected_model") is None:
-    set_user_data("selected_model", "Deepseek v3")
-
-# Flag untuk regenerate response terakhir (per session ID)
-if get_user_data("regenerate_last") is None:
-    set_user_data("regenerate_last", False)
-
-# Flag untuk menampilkan loading (per session ID)
-if get_user_data("is_loading") is None:
-    set_user_data("is_loading", False)
 
 # ===========================================
 # MODAL INPUT NAMA USER

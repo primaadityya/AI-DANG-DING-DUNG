@@ -238,7 +238,7 @@ if "regenerate_last" not in st.session_state:
 # ===========================================
 with st.sidebar:
     st.title("🤖 PouringGPT")
-    st.title("💬 Chat History")
+    st.markdown(f"<small>**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter</small>", unsafe_allow_html=True)
     
     # Tombol untuk membuat chat baru
     if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
@@ -323,9 +323,6 @@ with st.sidebar:
 # Ambil data chat yang sedang aktif
 current_chat = st.session_state.chats[st.session_state.current_chat_id]
 current_model = AVAILABLE_MODELS[st.session_state.selected_model]
-
-# Header halaman utama
-st.markdown(f"<small>**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter</small>", unsafe_allow_html=True)
 
 # Container untuk menampilkan percakapan
 chat_container = st.container()

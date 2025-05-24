@@ -6,7 +6,8 @@ import requests
 import uuid
 from datetime import datetime
 import json
-import pytz
+import pickle
+import os
 
 # ===========================================
 # KONFIGURASI HALAMAN STREAMLIT
@@ -216,6 +217,11 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         font-style: italic;
     }
+    
+    /* Styling untuk input rename */
+    .rename-input {
+        margin: 5px 0 10px 0;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -244,23 +250,110 @@ HEADERS = {
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ===========================================
-# FUNGSI UTILITAS
+# FUNGSI UTILITAS UNTUK TIMESTAMP
 # ===========================================
-def get_jakarta_time():
-    """Mendapatkan waktu Jakarta (GMT+7)"""
-    jakarta_tz = pytz.timezone('Asia/Jakarta')
-    return datetime.now(jakarta_tz)
+def get_current_time():
+    """Mendapatkan waktu sekarang dalam format datetime"""
+    return datetime.now()
 
 def format_time(dt):
-    """Format waktu dalam zona Jakarta"""
-    if dt.tzinfo is None:
-        jakarta_tz = pytz.timezone('Asia/Jakarta')
-        dt = jakarta_tz.localize(dt)
+    """Format waktu menjadi HH:MM"""
+    if isinstance(dt, str):
+        # Jika string, parse dulu
+        try:
+            dt = datetime.fromisoformat(dt)
+        except:
+            return datetime.now().strftime("%H:%M")
     return dt.strftime("%H:%M")
+
+def datetime_to_string(dt):
+    """Convert datetime ke string untuk JSON serialization"""
+    return dt.isoformat()
+
+def string_to_datetime(dt_str):
+    """Convert string ke datetime"""
+    try:
+        return datetime.fromisoformat(dt_str)
+    except:
+        return datetime.now()
+
+# ===========================================
+# FUNGSI UNTUK SAVE/LOAD DATA
+# ===========================================
+def save_data():
+    """Simpan data ke file JSON"""
+    try:
+        data = {
+            "user_name": st.session_state.user_name,
+            "chats": {},
+            "current_chat_id": st.session_state.current_chat_id,
+            "selected_model": st.session_state.selected_model
+        }
+        
+        # Convert datetime objects to strings
+        for chat_id, chat_data in st.session_state.chats.items():
+            data["chats"][chat_id] = {
+                "title": chat_data["title"],
+                "messages": [],
+                "created_at": datetime_to_string(chat_data["created_at"])
+            }
+            
+            for msg in chat_data["messages"]:
+                msg_copy = msg.copy()
+                if "timestamp" in msg_copy:
+                    msg_copy["timestamp"] = datetime_to_string(msg_copy["timestamp"])
+                data["chats"][chat_id]["messages"].append(msg_copy)
+        
+        # Save to JSON file
+        with open("chat_data.json", "w", encoding="utf-8") as f:
+            json.dump(data, f, ensure_ascii=False, indent=2)
+            
+    except Exception as e:
+        st.error(f"Error saving data: {e}")
+
+def load_data():
+    """Load data dari file JSON"""
+    try:
+        if os.path.exists("chat_data.json"):
+            with open("chat_data.json", "r", encoding="utf-8") as f:
+                data = json.load(f)
+            
+            # Restore data ke session state
+            if "user_name" in data:
+                st.session_state.user_name = data["user_name"]
+            
+            if "selected_model" in data:
+                st.session_state.selected_model = data["selected_model"]
+            
+            if "current_chat_id" in data:
+                st.session_state.current_chat_id = data["current_chat_id"]
+            
+            if "chats" in data and data["chats"]:
+                st.session_state.chats = {}
+                for chat_id, chat_data in data["chats"].items():
+                    st.session_state.chats[chat_id] = {
+                        "title": chat_data["title"],
+                        "messages": [],
+                        "created_at": string_to_datetime(chat_data["created_at"])
+                    }
+                    
+                    for msg in chat_data["messages"]:
+                        msg_copy = msg.copy()
+                        if "timestamp" in msg_copy:
+                            msg_copy["timestamp"] = string_to_datetime(msg_copy["timestamp"])
+                        st.session_state.chats[chat_id]["messages"].append(msg_copy)
+                        
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
 
 # ===========================================
 # INISIALISASI SESSION STATE
 # ===========================================
+# Load data yang tersimpan dulu
+if "data_loaded" not in st.session_state:
+    load_data()
+    st.session_state.data_loaded = True
+
 # Inisialisasi nama user
 if "user_name" not in st.session_state:
     st.session_state.user_name = ""
@@ -270,13 +363,13 @@ if "chats" not in st.session_state:
     st.session_state.chats = {}
     
 # Inisialisasi chat ID yang sedang aktif
-if "current_chat_id" not in st.session_state:
+if "current_chat_id" not in st.session_state or st.session_state.current_chat_id not in st.session_state.chats:
     chat_id = str(uuid.uuid4())
     st.session_state.current_chat_id = chat_id
     st.session_state.chats[chat_id] = {
         "title": "Chat Baru",
         "messages": [],
-        "created_at": get_jakarta_time()
+        "created_at": get_current_time()
     }
 
 # Inisialisasi model yang dipilih
@@ -335,6 +428,7 @@ if not st.session_state.user_name:
             if st.button("🚀 Mulai Chat", key="start_chat", use_container_width=True, type="primary"):
                 if user_name_input.strip():
                     st.session_state.user_name = user_name_input.strip()
+                    save_data()  # Save setelah input nama
                     st.rerun()
                 else:
                     st.error("Silakan masukkan nama Anda terlebih dahulu!")
@@ -342,6 +436,7 @@ if not st.session_state.user_name:
         with col_btn2:
             if st.button("⏭️ Lewati", key="skip_name", use_container_width=True, help="Chat tanpa nama personal"):
                 st.session_state.user_name = "Pengguna"
+                save_data()  # Save setelah skip nama
                 st.rerun()
         
         st.markdown("""
@@ -363,6 +458,7 @@ with st.sidebar:
     # Tombol untuk mengubah nama
     if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
         st.session_state.user_name = ""
+        save_data()
         st.rerun()
 
     st.markdown("---")
@@ -374,84 +470,102 @@ with st.sidebar:
         st.session_state.chats[chat_id] = {
             "title": "Chat Baru",
             "messages": [],
-            "created_at": get_jakarta_time()
+            "created_at": get_current_time()
         }
+        save_data()  # Save setelah buat chat baru
         st.rerun()
     
     # Tampilkan daftar semua chat yang ada
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
                                    key=lambda x: x[1]["created_at"], reverse=True):
-        col1, col2, col3 = st.columns([3, 1, 1])
         
-        with col1:
-            # Buat preview dari pesan pertama user sebagai judul
-            title = chat_data["title"]
-            if chat_data["messages"] and len(chat_data["messages"]) > 0:
-                first_user_msg = next((msg["content"] for msg in chat_data["messages"] 
-                                     if msg["role"] == "user"), "Chat Baru")
-                if len(first_user_msg) > 30:
-                    title = first_user_msg[:30] + "..."
-                else:
-                    title = first_user_msg
+        # Handle rename chat dengan session state yang lebih baik
+        is_renaming = st.session_state.get(f"renaming_{chat_id}", False)
+        
+        if not is_renaming:
+            col1, col2, col3 = st.columns([3, 1, 1])
             
-            is_active = chat_id == st.session_state.current_chat_id
-            
-            # Tombol untuk memilih chat
-            if st.button(
-                title,
-                key=f"chat_{chat_id}",
-                help=f"Buka chat - {chat_data['created_at'].strftime('%d/%m/%Y %H:%M')}",
-                type="primary" if is_active else "secondary",
-                use_container_width=True
-            ):
-                st.session_state.current_chat_id = chat_id
-                st.rerun()
-        
-        with col2:
-            # Tombol untuk rename chat
-            if st.button("✏️", key=f"rename_{chat_id}", help="Rename chat"):
-                st.session_state[f"renaming_{chat_id}"] = True
-                st.rerun()
-        
-        with col3:
-            # Tombol untuk menghapus chat
-            if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
-                del st.session_state.chats[chat_id]
-                if chat_id == st.session_state.current_chat_id:
-                    # Jika ada chat lain, pilih yang pertama. Jika tidak, buat chat baru
-                    if st.session_state.chats:
-                        st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
+            with col1:
+                # Buat preview dari pesan pertama user sebagai judul
+                title = chat_data["title"]
+                if chat_data["messages"] and len(chat_data["messages"]) > 0:
+                    first_user_msg = next((msg["content"] for msg in chat_data["messages"] 
+                                         if msg["role"] == "user"), "Chat Baru")
+                    if len(first_user_msg) > 30:
+                        title = first_user_msg[:30] + "..."
                     else:
-                        # Buat chat baru jika semua chat telah dihapus
-                        new_chat_id = str(uuid.uuid4())
-                        st.session_state.current_chat_id = new_chat_id
-                        st.session_state.chats[new_chat_id] = {
-                            "title": "Chat Baru",
-                            "messages": [],
-                            "created_at": get_jakarta_time()
-                        }
-                st.rerun()
+                        title = first_user_msg
+                
+                is_active = chat_id == st.session_state.current_chat_id
+                
+                # Tombol untuk memilih chat
+                if st.button(
+                    title,
+                    key=f"chat_{chat_id}",
+                    help=f"Buka chat - {chat_data['created_at'].strftime('%d/%m/%Y %H:%M')}",
+                    type="primary" if is_active else "secondary",
+                    use_container_width=True
+                ):
+                    st.session_state.current_chat_id = chat_id
+                    save_data()
+                    st.rerun()
+            
+            with col2:
+                # Tombol untuk rename chat
+                if st.button("✏️", key=f"rename_{chat_id}", help="Rename chat"):
+                    st.session_state[f"renaming_{chat_id}"] = True
+                    st.session_state[f"new_title_{chat_id}"] = chat_data["title"]
+                    st.rerun()
+            
+            with col3:
+                # Tombol untuk menghapus chat
+                if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
+                    del st.session_state.chats[chat_id]
+                    if chat_id == st.session_state.current_chat_id:
+                        # Jika ada chat lain, pilih yang pertama. Jika tidak, buat chat baru
+                        if st.session_state.chats:
+                            st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
+                        else:
+                            # Buat chat baru jika semua chat telah dihapus
+                            new_chat_id = str(uuid.uuid4())
+                            st.session_state.current_chat_id = new_chat_id
+                            st.session_state.chats[new_chat_id] = {
+                                "title": "Chat Baru",
+                                "messages": [],
+                                "created_at": get_current_time()
+                            }
+                    save_data()  # Save setelah hapus chat
+                    st.rerun()
         
-        # Handle rename chat
-        if st.session_state.get(f"renaming_{chat_id}", False):
+        else:
+            # Mode rename
             new_title = st.text_input(
-                "Nama baru:",
-                value=chat_data["title"],
-                key=f"new_title_{chat_id}",
+                f"Nama baru untuk chat:",
+                value=st.session_state.get(f"new_title_{chat_id}", chat_data["title"]),
+                key=f"rename_input_{chat_id}",
                 placeholder="Masukkan nama baru untuk chat..."
             )
             
             col_save, col_cancel = st.columns(2)
             with col_save:
-                if st.button("💾", key=f"save_rename_{chat_id}", help="Simpan"):
+                if st.button("💾 Simpan", key=f"save_rename_{chat_id}", help="Simpan nama baru", use_container_width=True):
                     if new_title.strip():
                         st.session_state.chats[chat_id]["title"] = new_title.strip()
-                    st.session_state[f"renaming_{chat_id}"] = False
+                        save_data()  # Save setelah rename
+                    # Cleanup session state
+                    if f"renaming_{chat_id}" in st.session_state:
+                        del st.session_state[f"renaming_{chat_id}"]
+                    if f"new_title_{chat_id}" in st.session_state:
+                        del st.session_state[f"new_title_{chat_id}"]
                     st.rerun()
             
             with col_cancel:
-                if st.button("❌", key=f"cancel_rename_{chat_id}", help="Batal"):
-                    st.session_state[f"renaming_{chat_id}"] = False
+                if st.button("❌ Batal", key=f"cancel_rename_{chat_id}", help="Batal rename", use_container_width=True):
+                    # Cleanup session state
+                    if f"renaming_{chat_id}" in st.session_state:
+                        del st.session_state[f"renaming_{chat_id}"]
+                    if f"new_title_{chat_id}" in st.session_state:
+                        del st.session_state[f"new_title_{chat_id}"]
                     st.rerun()
 
     st.markdown("---")
@@ -468,6 +582,7 @@ with st.sidebar:
     # Update model jika ada perubahan
     if selected_model != st.session_state.selected_model:
         st.session_state.selected_model = selected_model
+        save_data()  # Save setelah ganti model
         st.rerun()
 
 # ===========================================
@@ -491,7 +606,7 @@ with chat_container:
     
     # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
-        timestamp = format_time(message.get("timestamp", get_jakarta_time()))
+        timestamp = format_time(message.get("timestamp", get_current_time()))
         
         # Tampilkan pesan dari user dengan nama yang dipersonalisasi
         if message["role"] == "user":
@@ -524,7 +639,7 @@ with chat_container:
     
     # Tampilkan loading message jika sedang memproses
     if st.session_state.is_loading:
-        current_time = format_time(get_jakarta_time())
+        current_time = format_time(get_current_time())
         st.markdown(f"""
         <div class="loading-message">
             <div class="message-header">
@@ -587,7 +702,7 @@ if user_input:
         user_message = {
             "role": "user", 
             "content": user_input,
-            "timestamp": get_jakarta_time()
+            "timestamp": get_current_time()
         }
         current_chat["messages"].append(user_message)
         
@@ -600,6 +715,7 @@ if user_input:
     
     # Set loading state
     st.session_state.is_loading = True
+    save_data()  # Save setelah ada input baru
     st.rerun()
 
 # ===========================================
@@ -610,40 +726,4 @@ if st.session_state.is_loading:
         # Siapkan format pesan untuk API OpenRouter dengan personalisasi
         messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
         for msg in current_chat["messages"]:
-            if msg["role"] != "loading":  # Skip loading messages
-                messages_for_api.append({
-                    "role": msg["role"],
-                    "content": msg["content"]
-                })
-        
-        # Payload untuk API request
-        payload = {
-            "model": current_model,
-            "messages": messages_for_api
-        }
-        
-        # Kirim request ke OpenRouter API
-        response = requests.post(API_URL, headers=HEADERS, json=payload)
-        
-        # Proses response dari API
-        if response.status_code == 200:
-            bot_reply = response.json()['choices'][0]['message']['content']
-        else:
-            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
-            
-    except Exception as e:
-        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
-    
-    # Tambahkan respons AI ke riwayat chat
-    ai_message = {
-        "role": "assistant",
-        "content": bot_reply,
-        "timestamp": get_jakarta_time()
-    }
-    current_chat["messages"].append(ai_message)
-    
-    # Reset loading state
-    st.session_state.is_loading = False
-    
-    # Refresh halaman untuk menampilkan pesan baru
-    st.rerun()
+            if msg["role"] != "

@@ -6,15 +6,6 @@ import requests
 import uuid
 
 # ===========================================
-# KONFIGURASI HALAMAN STREAMLIT
-# ===========================================
-st.set_page_config(
-    page_title="PouringGPT",
-    page_icon="🤖",
-    layout="wide",
-    initial_sidebar_state="expanded"
-)
-# ===========================================
 # CUSTOM CSS UNTUK STYLING TAMPILAN
 # ===========================================
 st.markdown("""
@@ -25,7 +16,7 @@ st.markdown("""
         margin: 0 auto;
         padding: 0 20px;
     }
-    
+
     /* Styling untuk pesan dari user */
     .user-message {
         background-color: var(--background-color-secondary);
@@ -38,7 +29,7 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         border: 1px solid var(--border-color);
     }
-    
+
     /* Styling untuk pesan dari AI assistant */
     .assistant-message {
         background-color: var(--background-color);
@@ -51,6 +42,7 @@ st.markdown("""
         border: 1px solid var(--border-color);
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
+
     /* Variabel CSS untuk tema terang */
     @media (prefers-color-scheme: light) {
         :root {
@@ -62,6 +54,7 @@ st.markdown("""
             --hover-color: #f3f4f6;
         }
     }
+
     /* Variabel CSS untuk tema gelap (deteksi otomatis) */
     @media (prefers-color-scheme: dark) {
         :root {
@@ -73,8 +66,9 @@ st.markdown("""
             --hover-color: #404040;
         }
     }
-    /* Override untuk tema gelap Streamlit */
-    .stApp[data-theme="dark"] {
+
+    /* Tambahan: dukungan eksplisit untuk atribut data-theme */
+    [data-theme="dark"] {
         --background-color: #0e1117;
         --background-color-secondary: #262730;
         --text-color: #fafafa;
@@ -82,17 +76,8 @@ st.markdown("""
         --secondary-text-color: #8b949e;
         --hover-color: #21262d;
     }
-    /* Force override untuk tema gelap */
-    [data-testid="stApp"] {
-        --background-color: #0e1117;
-        --background-color-secondary: #262730;
-        --text-color: #fafafa;
-        --border-color: #30363d;
-        --secondary-text-color: #8b949e;
-        --hover-color: #21262d;
-    }
-    /* Override untuk tema terang */
-    [data-testid="stApp"][data-theme="light"] {
+
+    [data-theme="light"] {
         --background-color: #ffffff;
         --background-color-secondary: #f0f2f6;
         --text-color: #262730;
@@ -100,7 +85,7 @@ st.markdown("""
         --secondary-text-color: #6b7280;
         --hover-color: #f3f4f6;
     }
-    
+
     /* Header untuk setiap pesan (waktu, nama) */
     .message-header {
         display: flex;
@@ -110,9 +95,7 @@ st.markdown("""
         font-size: 12px;
         color: var(--secondary-text-color);
     }
-    
-    /* Container untuk tombol aksi (dihapus karena tidak ada fitur copy) */
-    
+
     /* Avatar lingkaran untuk pengguna dan AI */
     .message-avatar {
         width: 24px;
@@ -122,7 +105,7 @@ st.markdown("""
         margin-right: 8px;
         vertical-align: middle;
     }
-    
+
     /* Avatar khusus untuk user */
     .user-avatar {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -133,7 +116,7 @@ st.markdown("""
         font-size: 10px;
         font-weight: bold;
     }
-    
+
     /* Avatar khusus untuk AI */
     .ai-avatar {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
@@ -144,7 +127,7 @@ st.markdown("""
         font-size: 10px;
         font-weight: bold;
     }
-    
+
     /* Container untuk pemilihan model */
     .model-selector {
         margin: 15px 0;
@@ -153,7 +136,7 @@ st.markdown("""
         background-color: var(--background-color-secondary);
         border: 1px solid var(--border-color);
     }
-    
+
     /* Item chat di sidebar */
     .chat-item {
         padding: 12px;
@@ -164,17 +147,18 @@ st.markdown("""
         background-color: var(--background-color);
         color: var(--text-color);
     }
-    
+
     /* Efek hover untuk item chat */
     .chat-item:hover {
         background-color: var(--hover-color);
     }
-    
+
     /* Chat yang sedang aktif */
     .chat-item.active {
         background-color: var(--background-color-secondary);
         border-color: #3b82f6;
     }
+
     /* Styling untuk welcome section */
     .welcome-container {
         max-width: 600px;

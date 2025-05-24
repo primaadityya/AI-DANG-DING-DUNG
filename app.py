@@ -381,19 +381,6 @@ if (current_chat["messages"] and
 user_input = st.chat_input("Ketik pesan Anda di sini...")
 
 # ===========================================
-# FOOTER - INFORMASI STATUS
-# ===========================================
-st.markdown(
-    "<div style='text-align: center; color: var(--secondary-text-color); font-size: 12px; margin-top: 20px;'>"
-    f"Powered by {st.session_state.selected_model} via OpenRouter • "
-    f"Total Chats: {len(st.session_state.chats)} • "
-    f"Messages in current chat: {len(current_chat['messages'])}"
-    "</div>",
-    unsafe_allow_html=True
-)
-
-
-# ===========================================
 # PROSES REGENERATE RESPONSE
 # ===========================================
 if st.session_state.regenerate_last:

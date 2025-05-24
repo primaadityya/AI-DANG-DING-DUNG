@@ -18,7 +18,7 @@ st.markdown("""
     .main-content {
         max-width: 8000px;
         margin: 0 auto;
-        padding: 0 20px;
+        padding: 0 100px;
     }
     
     .user-message {

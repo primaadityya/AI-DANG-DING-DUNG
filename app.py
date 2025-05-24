@@ -6,6 +6,7 @@ import requests
 import uuid
 from datetime import datetime
 import json
+import pytz
 
 # ===========================================
 # KONFIGURASI HALAMAN STREAMLIT
@@ -110,23 +111,19 @@ st.markdown("""
     /* Header untuk setiap pesan (waktu, nama) */
     .message-header {
         display: flex;
-        justify-content: flex-start;
         align-items: center;
         margin-bottom: 8px;
-        font-size: 12px;
+        font-size: 13px;
         color: var(--secondary-text-color);
     }
     
-    /* Container untuk tombol aksi (dihapus karena tidak ada fitur copy) */
-    
-    /* Avatar lingkaran untuk pengguna dan AI */
+    /* Avatar untuk pengguna dan AI */
     .message-avatar {
-        width: 24px;
-        height: 24px;
+        width: 32px;
+        height: 32px;
         border-radius: 50%;
-        display: inline-block;
-        margin-right: 8px;
-        vertical-align: middle;
+        margin-right: 10px;
+        object-fit: cover;
     }
     
     /* Avatar khusus untuk user */
@@ -136,7 +133,7 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 10px;
+        font-size: 14px;
         font-weight: bold;
     }
     
@@ -147,8 +144,25 @@ st.markdown("""
         align-items: center;
         justify-content: center;
         color: white;
-        font-size: 10px;
+        font-size: 14px;
         font-weight: bold;
+    }
+    
+    /* Nama dan waktu di samping avatar */
+    .message-info {
+        display: flex;
+        flex-direction: column;
+    }
+    
+    .message-name {
+        font-weight: bold;
+        color: var(--text-color);
+        font-size: 14px;
+    }
+    
+    .message-time {
+        font-size: 11px;
+        color: var(--secondary-text-color);
     }
     
     /* Container untuk pemilihan model */
@@ -188,6 +202,20 @@ st.markdown("""
         margin: 0 auto;
         padding: 20px;
     }
+
+    /* Styling untuk loading message */
+    .loading-message {
+        background-color: var(--background-color);
+        color: var(--secondary-text-color);
+        padding: 15px 20px;
+        border-radius: 18px;
+        margin: 10px 0;
+        margin-right: 20%;
+        position: relative;
+        border: 1px solid var(--border-color);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+        font-style: italic;
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -216,6 +244,21 @@ HEADERS = {
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ===========================================
+# FUNGSI UTILITAS
+# ===========================================
+def get_jakarta_time():
+    """Mendapatkan waktu Jakarta (GMT+7)"""
+    jakarta_tz = pytz.timezone('Asia/Jakarta')
+    return datetime.now(jakarta_tz)
+
+def format_time(dt):
+    """Format waktu dalam zona Jakarta"""
+    if dt.tzinfo is None:
+        jakarta_tz = pytz.timezone('Asia/Jakarta')
+        dt = jakarta_tz.localize(dt)
+    return dt.strftime("%H:%M")
+
+# ===========================================
 # INISIALISASI SESSION STATE
 # ===========================================
 # Inisialisasi nama user
@@ -233,7 +276,7 @@ if "current_chat_id" not in st.session_state:
     st.session_state.chats[chat_id] = {
         "title": "Chat Baru",
         "messages": [],
-        "created_at": datetime.now()
+        "created_at": get_jakarta_time()
     }
 
 # Inisialisasi model yang dipilih
@@ -243,6 +286,10 @@ if "selected_model" not in st.session_state:
 # Flag untuk regenerate response terakhir
 if "regenerate_last" not in st.session_state:
     st.session_state.regenerate_last = False
+
+# Flag untuk menampilkan loading
+if "is_loading" not in st.session_state:
+    st.session_state.is_loading = False
 
 # ===========================================
 # MODAL INPUT NAMA USER
@@ -312,8 +359,6 @@ with st.sidebar:
     st.title("🤖 PouringGPT")
     st.markdown(f"<small>**Model:** {st.session_state.selected_model}", unsafe_allow_html=True)
     st.markdown(f"<small>**Provider:** OpenRouter</small>", unsafe_allow_html=True)
-
-# Container untuk menampilkan percakapan
     
     # Tombol untuk mengubah nama
     if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
@@ -329,14 +374,14 @@ with st.sidebar:
         st.session_state.chats[chat_id] = {
             "title": "Chat Baru",
             "messages": [],
-            "created_at": datetime.now()
+            "created_at": get_jakarta_time()
         }
         st.rerun()
     
     # Tampilkan daftar semua chat yang ada
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
                                    key=lambda x: x[1]["created_at"], reverse=True):
-        col1, col2 = st.columns([4, 1])
+        col1, col2, col3 = st.columns([3, 1, 1])
         
         with col1:
             # Buat preview dari pesan pertama user sebagai judul
@@ -363,6 +408,12 @@ with st.sidebar:
                 st.rerun()
         
         with col2:
+            # Tombol untuk rename chat
+            if st.button("✏️", key=f"rename_{chat_id}", help="Rename chat"):
+                st.session_state[f"renaming_{chat_id}"] = True
+                st.rerun()
+        
+        with col3:
             # Tombol untuk menghapus chat
             if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
                 del st.session_state.chats[chat_id]
@@ -377,9 +428,31 @@ with st.sidebar:
                         st.session_state.chats[new_chat_id] = {
                             "title": "Chat Baru",
                             "messages": [],
-                            "created_at": datetime.now()
+                            "created_at": get_jakarta_time()
                         }
                 st.rerun()
+        
+        # Handle rename chat
+        if st.session_state.get(f"renaming_{chat_id}", False):
+            new_title = st.text_input(
+                "Nama baru:",
+                value=chat_data["title"],
+                key=f"new_title_{chat_id}",
+                placeholder="Masukkan nama baru untuk chat..."
+            )
+            
+            col_save, col_cancel = st.columns(2)
+            with col_save:
+                if st.button("💾", key=f"save_rename_{chat_id}", help="Simpan"):
+                    if new_title.strip():
+                        st.session_state.chats[chat_id]["title"] = new_title.strip()
+                    st.session_state[f"renaming_{chat_id}"] = False
+                    st.rerun()
+            
+            with col_cancel:
+                if st.button("❌", key=f"cancel_rename_{chat_id}", help="Batal"):
+                    st.session_state[f"renaming_{chat_id}"] = False
+                    st.rerun()
 
     st.markdown("---")
     
@@ -418,14 +491,18 @@ with chat_container:
     
     # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
-        timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
+        timestamp = format_time(message.get("timestamp", get_jakarta_time()))
         
         # Tampilkan pesan dari user dengan nama yang dipersonalisasi
         if message["role"] == "user":
             st.markdown(f"""
             <div class="user-message">
                 <div class="message-header">
-                    <span><div class="user-avatar message-avatar">{st.session_state.user_name[:3].upper()}</div><strong>{st.session_state.user_name}</strong> • {timestamp}</span>
+                    <div class="user-avatar message-avatar">👤</div>
+                    <div class="message-info">
+                        <div class="message-name">{st.session_state.user_name}</div>
+                        <div class="message-time">{timestamp}</div>
+                    </div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
@@ -435,18 +512,39 @@ with chat_container:
             st.markdown(f"""
             <div class="assistant-message">
                 <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>Pouring</strong> • {timestamp}</span>
+                    <div class="ai-avatar message-avatar">🤖</div>
+                    <div class="message-info">
+                        <div class="message-name">Pouring</div>
+                        <div class="message-time">{timestamp}</div>
+                    </div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
             """, unsafe_allow_html=True)
+    
+    # Tampilkan loading message jika sedang memproses
+    if st.session_state.is_loading:
+        current_time = format_time(get_jakarta_time())
+        st.markdown(f"""
+        <div class="loading-message">
+            <div class="message-header">
+                <div class="ai-avatar message-avatar">🤖</div>
+                <div class="message-info">
+                    <div class="message-name">Pouring</div>
+                    <div class="message-time">{current_time}</div>
+                </div>
+            </div>
+            <div>Pouring sedang mengetik...</div>
+        </div>
+        """, unsafe_allow_html=True)
 
 # ===========================================
 # TOMBOL REGENERATE RESPONSE
 # ===========================================
 # Tampilkan tombol regenerate jika pesan terakhir dari AI
 if (current_chat["messages"] and 
-    current_chat["messages"][-1]["role"] == "assistant"):
+    current_chat["messages"][-1]["role"] == "assistant" and
+    not st.session_state.is_loading):
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
@@ -489,7 +587,7 @@ if user_input:
         user_message = {
             "role": "user", 
             "content": user_input,
-            "timestamp": datetime.now()
+            "timestamp": get_jakarta_time()
         }
         current_chat["messages"].append(user_message)
         
@@ -500,42 +598,52 @@ if user_input:
             else:
                 current_chat["title"] = user_input
     
-    # Tampilkan loading spinner saat menunggu response
-    with st.spinner("AI sedang memikirkan jawaban..."):
-        try:
-            # Siapkan format pesan untuk API OpenRouter dengan personalisasi
-            messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
-            for msg in current_chat["messages"]:
+    # Set loading state
+    st.session_state.is_loading = True
+    st.rerun()
+
+# ===========================================
+# PROSES API CALL (ASYNC HANDLING)
+# ===========================================
+if st.session_state.is_loading:
+    try:
+        # Siapkan format pesan untuk API OpenRouter dengan personalisasi
+        messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
+        for msg in current_chat["messages"]:
+            if msg["role"] != "loading":  # Skip loading messages
                 messages_for_api.append({
                     "role": msg["role"],
                     "content": msg["content"]
                 })
+        
+        # Payload untuk API request
+        payload = {
+            "model": current_model,
+            "messages": messages_for_api
+        }
+        
+        # Kirim request ke OpenRouter API
+        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        
+        # Proses response dari API
+        if response.status_code == 200:
+            bot_reply = response.json()['choices'][0]['message']['content']
+        else:
+            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
             
-            # Payload untuk API request
-            payload = {
-                "model": current_model,
-                "messages": messages_for_api
-            }
-            
-            # Kirim request ke OpenRouter API
-            response = requests.post(API_URL, headers=HEADERS, json=payload)
-            
-            # Proses response dari API
-            if response.status_code == 200:
-                bot_reply = response.json()['choices'][0]['message']['content']
-            else:
-                bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
-                
-        except Exception as e:
-            bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
+    except Exception as e:
+        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
     
     # Tambahkan respons AI ke riwayat chat
     ai_message = {
         "role": "assistant",
         "content": bot_reply,
-        "timestamp": datetime.now()
+        "timestamp": get_jakarta_time()
     }
     current_chat["messages"].append(ai_message)
+    
+    # Reset loading state
+    st.session_state.is_loading = False
     
     # Refresh halaman untuk menampilkan pesan baru
     st.rerun()

@@ -325,7 +325,7 @@ current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
 # Header halaman utama
 st.title("🤖 AI Chatbot")
-st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
+st.markdown(f"**Created by:** dangdingdung | **Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
 st.markdown("---")
 
 # Container untuk menampilkan percakapan

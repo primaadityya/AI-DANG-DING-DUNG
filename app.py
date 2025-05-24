@@ -284,9 +284,23 @@ with st.sidebar:
         with col2:
             # Tombol untuk menghapus chat
             if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
-                if len(st.session_state.chats) > 1:
-                    del st.session_state.chats[chat_id]
-                    if chat_id == st.session_state.current_chat_id:
+                del st.session_state.chats[chat_id]
+                if chat_id == st.session_state.current_chat_id:
+                    # Jika ada chat lain, pilih yang pertama. Jika tidak, buat chat baru
+                    if st.session_state.chats:
+                        st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
+                    else:
+                        # Buat chat baru jika semua chat telah dihapus
+                        new_chat_id = str(uuid.uuid4())
+                        st.session_state.current_chat_id = new_chat_id
+                        st.session_state.chats[new_chat_id] = {
+                            "title": "Chat Baru",
+                            "messages": [],
+                            "created_at": datetime.now()
+                        }
+                st.rerun()
+
+    st.markdown("---")
     
     # Pemilihan model AI
     st.subheader("🤖 Pilih Model")
@@ -296,7 +310,6 @@ with st.sidebar:
         index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model),
         key="model_selector"
     )
-    st.markdown("----")
     
     # Update model jika ada perubahan
     if selected_model != st.session_state.selected_model:

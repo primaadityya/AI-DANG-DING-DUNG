@@ -287,8 +287,6 @@ with st.sidebar:
                 if len(st.session_state.chats) > 1:
                     del st.session_state.chats[chat_id]
                     if chat_id == st.session_state.current_chat_id:
-
-    st.markdown("---")
     
     # Pemilihan model AI
     st.subheader("🤖 Pilih Model")

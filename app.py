@@ -726,4 +726,43 @@ if st.session_state.is_loading:
         # Siapkan format pesan untuk API OpenRouter dengan personalisasi
         messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
         for msg in current_chat["messages"]:
-            if msg["role"] != "
+            if msg["role"] != "loading":  # Skip loading messages
+                messages_for_api.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+        
+        # Payload untuk API request
+        payload = {
+            "model": current_model,
+            "messages": messages_for_api
+        }
+        
+        # Kirim request ke OpenRouter API
+        response = requests.post(API_URL, headers=HEADERS, json=payload)
+        
+        # Proses response dari API
+        if response.status_code == 200:
+            bot_reply = response.json()['choices'][0]['message']['content']
+        else:
+            bot_reply = f"⚠️ Error {response.status_code}: {response.text}"
+            
+    except Exception as e:
+        bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
+    
+    # Tambahkan respons AI ke riwayat chat
+    ai_message = {
+        "role": "assistant",
+        "content": bot_reply,
+        "timestamp": get_current_time()
+    }
+    current_chat["messages"].append(ai_message)
+    
+    # Reset loading state
+    st.session_state.is_loading = False
+    
+    # Save data setelah dapat response
+    save_data()
+    
+    # Refresh halaman untuk menampilkan pesan baru
+    st.rerun()

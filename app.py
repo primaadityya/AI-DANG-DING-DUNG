@@ -319,6 +319,8 @@ with st.sidebar:
     if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
         st.session_state.user_name = ""
         st.rerun()
+
+    st.markdown("---")
     
     # Tombol untuk membuat chat baru
     if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
@@ -378,6 +380,8 @@ with st.sidebar:
                             "created_at": datetime.now()
                         }
                 st.rerun()
+
+    st.markdown("---")
     
     # Pemilihan model AI
     st.subheader("🤖 Pilih Model")

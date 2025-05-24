@@ -7,9 +7,6 @@ import uuid
 from datetime import datetime
 import hashlib
 import time
-import json
-import os
-from urllib.parse import parse_qs
 
 # ===========================================
 # KONFIGURASI HALAMAN STREAMLIT
@@ -22,92 +19,16 @@ st.set_page_config(
 )
 
 # ===========================================
-# FUNGSI PERSISTENT STORAGE
-# ===========================================
-def get_session_id_from_url():
-    """Ambil session ID dari URL parameter"""
-    try:
-        query_params = st.experimental_get_query_params()
-        if "sid" in query_params:
-            return query_params["sid"][0]
-    except:
-        pass
-    return None
-
-def save_user_data(session_id, data):
-    """Simpan data user ke file JSON"""
-    try:
-        # Buat folder data jika belum ada
-        if not os.path.exists("user_data"):
-            os.makedirs("user_data")
-        
-        # Simpan data ke file JSON
-        filename = f"user_data/chat_{session_id}.json"
-        with open(filename, "w", encoding="utf-8") as f:
-            # Convert datetime objects to string for JSON serialization
-            json_data = json.dumps(data, default=str, ensure_ascii=False, indent=2)
-            f.write(json_data)
-        return True
-    except Exception as e:
-        st.error(f"Error saving data: {e}")
-        return False
-
-def load_user_data(session_id):
-    """Load data user dari file JSON"""
-    try:
-        filename = f"user_data/chat_{session_id}.json"
-        if os.path.exists(filename):
-            with open(filename, "r", encoding="utf-8") as f:
-                data = json.load(f)
-                
-                # Convert string timestamps back to datetime
-                if "chats" in data:
-                    for chat_id, chat_data in data["chats"].items():
-                        if "created_at" in chat_data and isinstance(chat_data["created_at"], str):
-                            try:
-                                chat_data["created_at"] = datetime.fromisoformat(chat_data["created_at"])
-                            except:
-                                chat_data["created_at"] = datetime.now()
-                        
-                        if "messages" in chat_data:
-                            for msg in chat_data["messages"]:
-                                if "timestamp" in msg and isinstance(msg["timestamp"], str):
-                                    try:
-                                        msg["timestamp"] = datetime.fromisoformat(msg["timestamp"])
-                                    except:
-                                        msg["timestamp"] = datetime.now()
-                
-                return data
-        return {}
-    except Exception as e:
-        st.error(f"Error loading data: {e}")
-        return {}
-
-# ===========================================
 # FUNGSI UNTUK GENERATE USER SESSION ID UNIK
 # ===========================================
 def get_user_session_id():
-    """Generate unique session ID per user/browser dengan persistent storage"""
-    
-    # Cek apakah ada session ID di URL
-    url_session_id = get_session_id_from_url()
-    if url_session_id:
-        # Jika ada di URL, gunakan itu dan simpan ke session state
-        st.session_state.user_session_id = url_session_id
-        return url_session_id
-    
-    # Jika tidak ada di session state, buat yang baru
+    """Generate unique session ID per user/browser"""
     if "user_session_id" not in st.session_state:
         # Buat ID unik berdasarkan timestamp dan random UUID
         timestamp = str(time.time())
         random_id = str(uuid.uuid4())
         session_string = f"{timestamp}_{random_id}"
-        session_id = hashlib.md5(session_string.encode()).hexdigest()[:16]
-        st.session_state.user_session_id = session_id
-        
-        # Set URL parameter agar session ID persistent
-        st.experimental_set_query_params(sid=session_id)
-        
+        st.session_state.user_session_id = hashlib.md5(session_string.encode()).hexdigest()[:16]
     return st.session_state.user_session_id
 
 # ===========================================
@@ -119,34 +40,14 @@ def get_user_key(key_name):
     return f"{session_id}_{key_name}"
 
 def get_user_data(key_name, default_value=None):
-    """Get user-specific data from session state with persistent storage"""
-    session_id = get_user_session_id()
+    """Get user-specific data from session state"""
     user_key = get_user_key(key_name)
-    
-    # Jika tidak ada di session state, coba load dari file
-    if user_key not in st.session_state:
-        stored_data = load_user_data(session_id)
-        if key_name in stored_data:
-            st.session_state[user_key] = stored_data[key_name]
-        else:
-            st.session_state[user_key] = default_value
-    
     return st.session_state.get(user_key, default_value)
 
 def set_user_data(key_name, value):
-    """Set user-specific data to session state and save to persistent storage"""
-    session_id = get_user_session_id()
+    """Set user-specific data to session state"""
     user_key = get_user_key(key_name)
     st.session_state[user_key] = value
-    
-    # Simpan semua data user ke file
-    all_user_data = {}
-    for key in st.session_state:
-        if key.startswith(f"{session_id}_"):
-            clean_key = key.replace(f"{session_id}_", "")
-            all_user_data[clean_key] = st.session_state[key]
-    
-    save_user_data(session_id, all_user_data)
 
 # ===========================================
 # CUSTOM CSS UNTUK STYLING TAMPILAN
@@ -346,17 +247,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
         font-style: italic;
     }
-
-    /* Info persistent storage */
-    .storage-info {
-        background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%);
-        color: white;
-        padding: 8px 12px;
-        border-radius: 20px;
-        font-size: 12px;
-        margin: 5px 0;
-        text-align: center;
-    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -407,13 +297,6 @@ def format_time(dt):
 # Generate unique session ID untuk user ini
 session_id = get_user_session_id()
 
-# Tampilkan info persistent storage
-st.markdown(f"""
-<div class="storage-info">
-    💾 Chat Tersimpan Otomatis | Session ID: {session_id[:8]}... | User Terisolasi
-</div>
-""", unsafe_allow_html=True)
-
 # Inisialisasi nama user (per session ID)
 if get_user_data("user_name") is None:
     set_user_data("user_name", "")
@@ -463,20 +346,6 @@ if not user_name:
         <h1>🤖 Selamat datang di PouringGPT!</h1>
         <p style='font-size: 18px; margin: 0;'>AI Assistant yang siap membantu Kamu</p>
         <p style='font-size: 14px; margin: 0;'>Created by : dangdingdung</p>        
-    </div>
-    """, unsafe_allow_html=True)
-    
-    # Info persistent storage
-    st.markdown(f"""
-    <div style='text-align: center; margin: 20px 0; padding: 15px; background-color: var(--background-color-secondary); 
-                border-radius: 10px; border: 1px solid var(--border-color);'>
-        <h4 style='color: #4CAF50; margin: 0;'>✅ Chat Anda Akan Tersimpan Otomatis</h4>
-        <p style='margin: 5px 0; color: var(--secondary-text-color); font-size: 14px;'>
-            Reload halaman tidak akan menghapus riwayat chat Anda
-        </p>
-        <p style='margin: 0; color: var(--secondary-text-color); font-size: 12px;'>
-            Session ID: <code>{session_id}</code>
-        </p>
     </div>
     """, unsafe_allow_html=True)
     
@@ -532,15 +401,6 @@ with st.sidebar:
     selected_model = get_user_data("selected_model", "Deepseek v3")
     st.markdown(f"<small>**Model:** {selected_model}</small>", unsafe_allow_html=True)
     st.markdown(f"<small>**Provider:** OpenRouter</small>", unsafe_allow_html=True)
-    
-    # Info persistent storage di sidebar
-    st.markdown(f"""
-    <div style='background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); color: white; 
-                padding: 10px; border-radius: 8px; margin: 10px 0; text-align: center;'>
-        <div style='font-size: 12px; margin-bottom: 5px;'>💾 Chat Tersimpan</div>
-        <div style='font-size: 10px; opacity: 0.9;'>ID: {session_id[:12]}...</div>
-    </div>
-    """, unsafe_allow_html=True)
     
     # Tombol untuk mengubah nama
     if st.button("✏️ Ubah Nama", key=f"change_name_{session_id}", help="Ubah nama pengguna", use_container_width=True):
@@ -654,7 +514,6 @@ with chat_container:
         st.markdown(f"""
         <div style='text-align: center; margin: 50px 0; color: var(--secondary-text-color);'>
             <h3>Hai {user_name}, Apa yang bisa Pouring bantu?</h3>
-            <p>💾 Chat ini akan tersimpan otomatis dan tidak hilang saat reload</p>
         </div>
         """, unsafe_allow_html=True)
     

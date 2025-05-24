@@ -384,7 +384,7 @@ with st.sidebar:
     st.markdown("---")
     
     # Pemilihan model AI
-    st.subheader("🤖 Pilih Model")
+    st.subheader("🌟 Pilih Model")
     selected_model = st.selectbox(
         "Model AI:",
         options=list(AVAILABLE_MODELS.keys()),

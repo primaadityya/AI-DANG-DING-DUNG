@@ -52,13 +52,15 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
     /* Variabel CSS untuk tema terang */
-    :root {
-        --background-color: #ffffff;
-        --background-color-secondary: #f0f2f6;
-        --text-color: #262730;
-        --border-color: #e1e5e9;
-        --secondary-text-color: #6b7280;
-        --hover-color: #f3f4f6;
+    @media (prefers-color-scheme: light) {
+        :root {
+            --background-color: #ffffff;
+            --background-color-secondary: #f0f2f6;
+            --text-color: #262730;
+            --border-color: #e1e5e9;
+            --secondary-text-color: #6b7280;
+            --hover-color: #f3f4f6;
+        }
     }
     /* Variabel CSS untuk tema gelap (deteksi otomatis) */
     @media (prefers-color-scheme: dark) {

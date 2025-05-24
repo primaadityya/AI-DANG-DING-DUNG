@@ -333,8 +333,6 @@ with st.sidebar:
         }
         st.rerun()
     
-    st.markdown("---")
-    
     # Tampilkan daftar semua chat yang ada
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
                                    key=lambda x: x[1]["created_at"], reverse=True):

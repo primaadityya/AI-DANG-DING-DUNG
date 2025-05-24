@@ -28,20 +28,6 @@ st.markdown("""
         margin: 0 auto;
         padding: 0 20px;
     }
-    
-    /* Styling untuk pesan dari user */
-    .user-message {
-        background-color: var(--background-color-secondary);
-        color: var(--text-color);
-        padding: 15px 20px;
-        border-radius: 18px;
-        margin: 10px 0;
-        margin-left: 20%;
-        position: relative;
-        box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid var(--border-color);
-    }
-    
 
     /* Variabel CSS untuk tema terang */
     :root {

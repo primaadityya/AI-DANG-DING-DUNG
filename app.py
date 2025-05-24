@@ -1,10 +1,15 @@
+# ===========================================
+# IMPORT LIBRARY YANG DIPERLUKAN
+# ===========================================
 import streamlit as st
 import requests
 import uuid
 from datetime import datetime
 import json
 
-# Konfigurasi halaman
+# ===========================================
+# KONFIGURASI HALAMAN STREAMLIT
+# ===========================================
 st.set_page_config(
     page_title="AI Chatbot",
     page_icon="🤖",
@@ -12,15 +17,19 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# Custom CSS untuk styling yang responsive terhadap dark/light theme
+# ===========================================
+# CUSTOM CSS UNTUK STYLING TAMPILAN
+# ===========================================
 st.markdown("""
 <style>
+    /* Container utama untuk membatasi lebar konten */
     .main-content {
-        max-width: 8000px;
+        max-width: 800px;
         margin: 0 auto;
-        padding: 0 100px;
+        padding: 0 20px;
     }
     
+    /* Styling untuk pesan dari user */
     .user-message {
         background-color: var(--background-color-secondary);
         color: var(--text-color);
@@ -33,19 +42,20 @@ st.markdown("""
         border: 1px solid var(--border-color);
     }
     
-    .assistant-message {
-        background-color: var(--background-color);
-        color: var(--text-color);
-        padding: 15px 20px;
-        border-radius: 18px;
-        margin: 10px 0;
-        margin-right: 20%;
-        position: relative;
-        border: 1px solid var(--border-color);
-        box-shadow: 0 1px 3px rgba(0,0,0,0.05);
-    }
+    # /* Styling untuk pesan dari AI assistant */
+    # .assistant-message {
+    #     background-color: var(--background-color);
+    #     color: var(--text-color);
+    #     padding: 15px 20px;
+    #     border-radius: 18px;
+    #     margin: 10px 0;
+    #     margin-right: 20%;
+    #     position: relative;
+    #     border: 1px solid var(--border-color);
+    #     box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    # }
 
-    /* Light theme variables */
+    /* Variabel CSS untuk tema terang */
     :root {
         --background-color: #ffffff;
         --background-color-secondary: #f0f2f6;
@@ -55,7 +65,7 @@ st.markdown("""
         --hover-color: #f3f4f6;
     }
 
-    /* Dark theme variables */
+    /* Variabel CSS untuk tema gelap (deteksi otomatis) */
     @media (prefers-color-scheme: dark) {
         :root {
             --background-color: #1e1e1e;
@@ -67,7 +77,7 @@ st.markdown("""
         }
     }
 
-    /* Streamlit dark theme detection */
+    /* Override untuk tema gelap Streamlit */
     .stApp[data-theme="dark"] {
         --background-color: #0e1117;
         --background-color-secondary: #262730;
@@ -77,7 +87,7 @@ st.markdown("""
         --hover-color: #21262d;
     }
 
-    /* Force override for dark theme */
+    /* Force override untuk tema gelap */
     [data-testid="stApp"] {
         --background-color: #0e1117;
         --background-color-secondary: #262730;
@@ -87,6 +97,7 @@ st.markdown("""
         --hover-color: #21262d;
     }
 
+    /* Override untuk tema terang */
     [data-testid="stApp"][data-theme="light"] {
         --background-color: #ffffff;
         --background-color-secondary: #f0f2f6;
@@ -96,6 +107,7 @@ st.markdown("""
         --hover-color: #f3f4f6;
     }
     
+    /* Header untuk setiap pesan (waktu, nama, dll) */
     .message-header {
         display: flex;
         justify-content: space-between;
@@ -105,12 +117,14 @@ st.markdown("""
         color: var(--secondary-text-color);
     }
     
+    /* Container untuk tombol aksi (copy, dll) */
     .message-actions {
         display: flex;
         gap: 8px;
         align-items: center;
     }
     
+    /* Styling untuk tombol aksi */
     .action-btn {
         background: none;
         border: none;
@@ -122,10 +136,12 @@ st.markdown("""
         transition: background-color 0.2s;
     }
     
+    /* Efek hover untuk tombol aksi */
     .action-btn:hover {
         background-color: var(--hover-color);
     }
     
+    /* Avatar lingkaran untuk pengguna dan AI */
     .message-avatar {
         width: 24px;
         height: 24px;
@@ -135,6 +151,7 @@ st.markdown("""
         vertical-align: middle;
     }
     
+    /* Avatar khusus untuk user */
     .user-avatar {
         background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         display: flex;
@@ -145,6 +162,7 @@ st.markdown("""
         font-weight: bold;
     }
     
+    /* Avatar khusus untuk AI */
     .ai-avatar {
         background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
         display: flex;
@@ -155,6 +173,7 @@ st.markdown("""
         font-weight: bold;
     }
     
+    /* Container untuk pemilihan model */
     .model-selector {
         margin: 15px 0;
         padding: 10px;
@@ -163,6 +182,7 @@ st.markdown("""
         border: 1px solid var(--border-color);
     }
     
+    /* Item chat di sidebar */
     .chat-item {
         padding: 12px;
         border-radius: 6px;
@@ -173,10 +193,12 @@ st.markdown("""
         color: var(--text-color);
     }
     
+    /* Efek hover untuk item chat */
     .chat-item:hover {
         background-color: var(--hover-color);
     }
     
+    /* Chat yang sedang aktif */
     .chat-item.active {
         background-color: var(--background-color-secondary);
         border-color: #3b82f6;
@@ -184,7 +206,9 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-# Definisi model yang tersedia
+# ===========================================
+# DEFINISI MODEL AI YANG TERSEDIA
+# ===========================================
 AVAILABLE_MODELS = {
     "Deepseek v3": "deepseek/deepseek-chat-v3-0324",
     "Llama 4": "meta-llama/llama-4-maverick:free", 
@@ -192,20 +216,28 @@ AVAILABLE_MODELS = {
     "Mistral Nemo": "mistralai/mistral-nemo:free"
 }
 
-# Ambil API key dari secrets
+# ===========================================
+# KONFIGURASI API OPENROUTER
+# ===========================================
+# Ambil API key dari Streamlit secrets
 OPENROUTER_API_KEY = st.secrets.get("OPENROUTER_API_KEY", "")
+# Header untuk autentikasi API
 HEADERS = {
     "Authorization": f"Bearer {OPENROUTER_API_KEY}",
     "HTTP-Referer": "https://ai-dang-ding-dung.streamlit.app/",
     "X-Title": "AI Chatbot Streamlit"
 }
-
+# URL endpoint API OpenRouter
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
-# Inisialisasi session state
+# ===========================================
+# INISIALISASI SESSION STATE
+# ===========================================
+# Inisialisasi dictionary untuk menyimpan semua chat
 if "chats" not in st.session_state:
     st.session_state.chats = {}
     
+# Inisialisasi chat ID yang sedang aktif
 if "current_chat_id" not in st.session_state:
     chat_id = str(uuid.uuid4())
     st.session_state.current_chat_id = chat_id
@@ -215,17 +247,21 @@ if "current_chat_id" not in st.session_state:
         "created_at": datetime.now()
     }
 
+# Inisialisasi model yang dipilih
 if "selected_model" not in st.session_state:
     st.session_state.selected_model = "Deepseek v3"
 
+# Flag untuk regenerate response terakhir
 if "regenerate_last" not in st.session_state:
     st.session_state.regenerate_last = False
 
-# Sidebar
+# ===========================================
+# SIDEBAR - RIWAYAT CHAT & PENGATURAN
+# ===========================================
 with st.sidebar:
     st.title("💬 Chat History")
     
-    # Tombol chat baru
+    # Tombol untuk membuat chat baru
     if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
         chat_id = str(uuid.uuid4())
         st.session_state.current_chat_id = chat_id
@@ -238,13 +274,13 @@ with st.sidebar:
     
     st.markdown("---")
     
-    # Daftar chat
+    # Tampilkan daftar semua chat yang ada
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
                                    key=lambda x: x[1]["created_at"], reverse=True):
         col1, col2 = st.columns([4, 1])
         
         with col1:
-            # Buat preview dari pesan pertama user
+            # Buat preview dari pesan pertama user sebagai judul
             title = chat_data["title"]
             if chat_data["messages"] and len(chat_data["messages"]) > 0:
                 first_user_msg = next((msg["content"] for msg in chat_data["messages"] 
@@ -256,6 +292,7 @@ with st.sidebar:
             
             is_active = chat_id == st.session_state.current_chat_id
             
+            # Tombol untuk memilih chat
             if st.button(
                 title,
                 key=f"chat_{chat_id}",
@@ -267,6 +304,7 @@ with st.sidebar:
                 st.rerun()
         
         with col2:
+            # Tombol untuk menghapus chat
             if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
                 if len(st.session_state.chats) > 1:
                     del st.session_state.chats[chat_id]
@@ -279,7 +317,7 @@ with st.sidebar:
 
     st.markdown("---")
     
-    # Model selector
+    # Pemilihan model AI
     st.subheader("🤖 Pilih Model")
     selected_model = st.selectbox(
         "Model AI:",
@@ -288,27 +326,32 @@ with st.sidebar:
         key="model_selector"
     )
     
+    # Update model jika ada perubahan
     if selected_model != st.session_state.selected_model:
         st.session_state.selected_model = selected_model
         st.rerun()
 
-# Main content
+# ===========================================
+# KONTEN UTAMA - AREA CHAT
+# ===========================================
+# Ambil data chat yang sedang aktif
 current_chat = st.session_state.chats[st.session_state.current_chat_id]
 current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
-# Header
+# Header halaman utama
 st.title("🤖 AI Chatbot")
 st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
 st.markdown("---")
 
-# Container untuk chat
+# Container untuk menampilkan percakapan
 chat_container = st.container()
 
 with chat_container:
-    # Tampilkan riwayat chat
+    # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
         timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
         
+        # Tampilkan pesan dari user
         if message["role"] == "user":
             st.markdown(f"""
             <div class="user-message">
@@ -321,6 +364,7 @@ with chat_container:
                 <div>{message["content"]}</div>
             </div>
             """, unsafe_allow_html=True)
+        # Tampilkan pesan dari AI
         else:
             st.markdown(f"""
             <div class="assistant-message">
@@ -334,7 +378,10 @@ with chat_container:
             </div>
             """, unsafe_allow_html=True)
 
-# Tombol regenerate untuk pesan AI terakhir
+# ===========================================
+# TOMBOL REGENERATE RESPONSE
+# ===========================================
+# Tampilkan tombol regenerate jika pesan terakhir dari AI
 if (current_chat["messages"] and 
     current_chat["messages"][-1]["role"] == "assistant"):
     
@@ -345,11 +392,15 @@ if (current_chat["messages"] and
             st.session_state.regenerate_last = True
             st.rerun()
 
-# Input chat di bagian bawah
+# ===========================================
+# INPUT CHAT DARI USER
+# ===========================================
 st.markdown("---")
 user_input = st.chat_input("Ketik pesan Anda di sini...")
 
-# Handle regenerate
+# ===========================================
+# PROSES REGENERATE RESPONSE
+# ===========================================
 if st.session_state.regenerate_last:
     st.session_state.regenerate_last = False
     
@@ -367,6 +418,9 @@ if st.session_state.regenerate_last:
         if last_user_message:
             user_input = last_user_message  # Set sebagai input untuk diproses
 
+# ===========================================
+# PROSES INPUT USER & PANGGIL API
+# ===========================================
 if user_input:
     # Jika bukan regenerate, tambahkan pesan user baru
     if not st.session_state.regenerate_last:
@@ -384,10 +438,10 @@ if user_input:
             else:
                 current_chat["title"] = user_input
     
-    # Tampilkan loading spinner
+    # Tampilkan loading spinner saat menunggu response
     with st.spinner("AI sedang memikirkan jawaban..."):
         try:
-            # Siapkan riwayat percakapan untuk API
+            # Siapkan format pesan untuk API OpenRouter
             messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
             for msg in current_chat["messages"]:
                 messages_for_api.append({
@@ -395,13 +449,16 @@ if user_input:
                     "content": msg["content"]
                 })
             
+            # Payload untuk API request
             payload = {
                 "model": current_model,
                 "messages": messages_for_api
             }
             
+            # Kirim request ke OpenRouter API
             response = requests.post(API_URL, headers=HEADERS, json=payload)
             
+            # Proses response dari API
             if response.status_code == 200:
                 bot_reply = response.json()['choices'][0]['message']['content']
             else:
@@ -410,7 +467,7 @@ if user_input:
         except Exception as e:
             bot_reply = f"⚠️ Terjadi kesalahan: {str(e)}"
     
-    # Tambahkan respons AI ke chat history
+    # Tambahkan respons AI ke riwayat chat
     ai_message = {
         "role": "assistant",
         "content": bot_reply,
@@ -418,10 +475,12 @@ if user_input:
     }
     current_chat["messages"].append(ai_message)
     
-    # Rerun untuk update tampilan
+    # Refresh halaman untuk menampilkan pesan baru
     st.rerun()
 
-# Footer
+# ===========================================
+# FOOTER - INFORMASI STATUS
+# ===========================================
 st.markdown("---")
 st.markdown(
     "<div style='text-align: center; color: var(--secondary-text-color); font-size: 12px;'>"

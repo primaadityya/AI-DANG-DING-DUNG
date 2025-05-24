@@ -296,6 +296,7 @@ with st.sidebar:
         index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model),
         key="model_selector"
     )
+    st.markdown("----")
     
     # Update model jika ada perubahan
     if selected_model != st.session_state.selected_model:

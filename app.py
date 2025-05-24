@@ -85,24 +85,24 @@ st.markdown("""
         --hover-color: #21262d;
     }
 
-    /* Force override untuk tema gelap */
+    /* Override untuk tema terang (default) */
     [data-testid="stApp"] {
-        --background-color: #0e1117;
-        --background-color-secondary: #262730;
-        --text-color: #fafafa;
-        --border-color: #30363d;
-        --secondary-text-color: #8b949e;
-        --hover-color: #21262d;
-    }
-
-    /* Override untuk tema terang */
-    [data-testid="stApp"][data-theme="light"] {
         --background-color: #ffffff;
         --background-color-secondary: #f0f2f6;
         --text-color: #262730;
         --border-color: #e1e5e9;
         --secondary-text-color: #6b7280;
         --hover-color: #f3f4f6;
+    }
+
+    /* Override untuk tema gelap */
+    [data-testid="stApp"][data-theme="dark"] {
+        --background-color: #0e1117;
+        --background-color-secondary: #262730;
+        --text-color: #fafafa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #21262d;
     }
     
     /* Header untuk setiap pesan (nama) */

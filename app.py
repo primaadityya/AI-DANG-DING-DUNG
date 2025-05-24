@@ -457,9 +457,35 @@ with st.sidebar:
     
     # Tombol untuk mengubah nama
     if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
-        st.session_state.user_name = ""
-        save_data()
-        st.rerun()
+        # Buka modal untuk mengubah nama
+        st.session_state.show_name_change_modal = True
+
+    # Modal untuk mengubah nama
+    if st.session_state.get("show_name_change_modal", False):
+        st.markdown("### ✏️ Ubah Nama")
+        new_name = st.text_input(
+            "Nama Baru:",
+            value=st.session_state.user_name,
+            key="new_name_input",
+            placeholder="Masukkan nama baru..."
+        )
+        
+        col_save, col_cancel = st.columns(2)
+        with col_save:
+            if st.button("✅ Simpan", key="save_new_name", use_container_width=True):
+                if new_name.strip():
+                    st.session_state.user_name = new_name.strip()
+                    st.session_state.show_name_change_modal = False
+                    save_data()
+                    st.success(f"Nama berhasil diubah menjadi: {new_name.strip()}")
+                    st.rerun()
+                else:
+                    st.error("Nama tidak boleh kosong!")
+        
+        with col_cancel:
+            if st.button("❌ Batal", key="cancel_new_name", use_container_width=True):
+                st.session_state.show_name_change_modal = False
+                st.rerun()
 
     st.markdown("---")
     
@@ -479,7 +505,7 @@ with st.sidebar:
     for chat_id, chat_data in sorted(st.session_state.chats.items(), 
                                    key=lambda x: x[1]["created_at"], reverse=True):
         
-        # Handle rename chat dengan session state yang lebih baik
+        # Handle rename chat
         is_renaming = st.session_state.get(f"renaming_{chat_id}", False)
         
         if not is_renaming:
@@ -514,7 +540,7 @@ with st.sidebar:
                 # Tombol untuk rename chat
                 if st.button("✏️", key=f"rename_{chat_id}", help="Rename chat"):
                     st.session_state[f"renaming_{chat_id}"] = True
-                    st.session_state[f"new_title_{chat_id}"] = chat_data["title"]
+                    st.session_state[f"new_title_{chat_id}"] = title
                     st.rerun()
             
             with col3:
@@ -548,7 +574,7 @@ with st.sidebar:
             
             col_save, col_cancel = st.columns(2)
             with col_save:
-                if st.button("💾 Simpan", key=f"save_rename_{chat_id}", help="Simpan nama baru", use_container_width=True):
+                if st.button("💾", key=f"save_rename_{chat_id}", help="Simpan nama baru", use_container_width=True):
                     if new_title.strip():
                         st.session_state.chats[chat_id]["title"] = new_title.strip()
                         save_data()  # Save setelah rename
@@ -560,7 +586,7 @@ with st.sidebar:
                     st.rerun()
             
             with col_cancel:
-                if st.button("❌ Batal", key=f"cancel_rename_{chat_id}", help="Batal rename", use_container_width=True):
+                if st.button("❌", key=f"cancel_rename_{chat_id}", help="Batal rename", use_container_width=True):
                     # Cleanup session state
                     if f"renaming_{chat_id}" in st.session_state:
                         del st.session_state[f"renaming_{chat_id}"]
@@ -683,15 +709,10 @@ if st.session_state.regenerate_last:
     if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
         current_chat["messages"].pop()
         
-        # Ambil pesan user terakhir untuk regenerate
-        last_user_message = None
-        for msg in reversed(current_chat["messages"]):
-            if msg["role"] == "user":
-                last_user_message = msg["content"]
-                break
-        
-        if last_user_message:
-            user_input = last_user_message  # Set sebagai input untuk diproses
+        # Set loading state untuk regenerate
+        st.session_state.is_loading = True
+        save_data()
+        st.rerun()
 
 # ===========================================
 # PROSES INPUT USER & PANGGIL API

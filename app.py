@@ -11,7 +11,7 @@ import json
 # KONFIGURASI HALAMAN STREAMLIT
 # ===========================================
 st.set_page_config(
-    page_title="AI Chatbot",
+    page_title="PouringGPT",
     page_icon="🤖",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -237,6 +237,7 @@ if "regenerate_last" not in st.session_state:
 # SIDEBAR - RIWAYAT CHAT & PENGATURAN
 # ===========================================
 with st.sidebar:
+    st.title("🤖 PouringGPT")
     st.title("💬 Chat History")
     
     # Tombol untuk membuat chat baru
@@ -324,7 +325,6 @@ current_chat = st.session_state.chats[st.session_state.current_chat_id]
 current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
 # Header halaman utama
-st.title("🤖 AI Chatbot")
 st.markdown(f"<small>**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter</small>", unsafe_allow_html=True)
 
 # Container untuk menampilkan percakapan

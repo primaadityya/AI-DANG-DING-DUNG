@@ -222,8 +222,7 @@ st.markdown("""
             border-color: #d97706 !important;
         }
     }
-</style>
-""", unsafe_allow_html=True)
+</style>""", unsafe_allow_html=True)
 
 # ===========================================
 # DEFINISI MODEL AI YANG TERSEDIA

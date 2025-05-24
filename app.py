@@ -182,29 +182,11 @@ st.markdown("""
         border-color: #3b82f6;
     }
 
-    /* Styling untuk modal input nama */
-    .username-modal {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 9999;
-    }
-    
-    .username-modal-content {
-        background-color: var(--background-color);
-        padding: 30px;
-        border-radius: 15px;
-        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
-        max-width: 400px;
-        width: 90%;
-        text-align: center;
-        border: 1px solid var(--border-color);
+    /* Styling untuk welcome section */
+    .welcome-container {
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
     }
 </style>
 """, unsafe_allow_html=True)
@@ -265,26 +247,60 @@ if "regenerate_last" not in st.session_state:
 # ===========================================
 # MODAL INPUT NAMA USER
 # ===========================================
-
+if not st.session_state.user_name:
+    # Container untuk input nama tanpa modal overlay
+    st.markdown("<br><br>", unsafe_allow_html=True)
+    
+    # Header dengan styling yang menarik
+    st.markdown("""
+    <div style='text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+                border-radius: 15px; margin-bottom: 30px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1);'>
+        <h1>🤖 Selamat datang di PouringGPT!</h1>
+        <p style='font-size: 18px; margin: 0;'>AI Assistant yang siap membantu Anda</p>
+    </div>
+    """, unsafe_allow_html=True)
+    
     # Container untuk input nama
-    with st.container():
-        st.markdown("<br><br><br>", unsafe_allow_html=True)
-        col1, col2, col3 = st.columns([1, 2, 1])
+    col1, col2, col3 = st.columns([1, 2, 1])
+    
+    with col2:
+        st.markdown("""
+        <div style='background-color: var(--background-color-secondary); padding: 25px; border-radius: 10px; 
+                    border: 1px solid var(--border-color); text-align: center; margin-bottom: 20px;'>
+            <h3 style='margin-top: 0; color: var(--text-color);'>👋 Perkenalkan diri Anda</h3>
+            <p style='color: var(--secondary-text-color); margin-bottom: 20px;'>
+                Masukkan nama Anda untuk pengalaman chat yang lebih personal
+            </p>
+        </div>
+        """, unsafe_allow_html=True)
         
-        with col2:
-            st.markdown("### 👋 Perkenalkan diri Anda")
-            user_name_input = st.text_input(
-                "Nama Anda:",
-                placeholder="Ketik nama Anda disini...",
-                key="name_input"
-            )
-            
-            if st.button("Mulai Chat", key="start_chat", use_container_width=True):
+        user_name_input = st.text_input(
+            "Nama Anda:",
+            placeholder="Ketik nama Anda disini...",
+            key="name_input",
+            help="Nama ini akan digunakan untuk mempersonalisasi percakapan dengan Pouring"
+        )
+        
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            if st.button("🚀 Mulai Chat", key="start_chat", use_container_width=True, type="primary"):
                 if user_name_input.strip():
                     st.session_state.user_name = user_name_input.strip()
                     st.rerun()
                 else:
                     st.error("Silakan masukkan nama Anda terlebih dahulu!")
+        
+        with col_btn2:
+            if st.button("⏭️ Lewati", key="skip_name", use_container_width=True, help="Chat tanpa nama personal"):
+                st.session_state.user_name = "Pengguna"
+                st.rerun()
+        
+        st.markdown("""
+        <div style='text-align: center; margin-top: 20px; color: var(--secondary-text-color); font-size: 14px;'>
+            <p>💡 Tips: Dengan memasukkan nama, Pouring akan dapat menyapa Anda secara personal!</p>
+        </div>
+        """, unsafe_allow_html=True)
     
     st.stop()
 

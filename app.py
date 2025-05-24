@@ -92,8 +92,8 @@ st.markdown("""
     /* Variabel CSS untuk tema gelap (deteksi otomatis) */
     @media (prefers-color-scheme: dark) {
         :root {
-            --background-color: #1e1e1e;
-            --background-color-secondary: #2d2d2d;
+            --background-color: #0e1117;
+            --background-color-secondary: #262730;
             --text-color: #fafafa;
             --border-color: #404040;
             --secondary-text-color: #a1a1a1;

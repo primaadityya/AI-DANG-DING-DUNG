@@ -181,6 +181,31 @@ st.markdown("""
         background-color: var(--background-color-secondary);
         border-color: #3b82f6;
     }
+
+    /* Styling untuk modal input nama */
+    .username-modal {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background-color: rgba(0, 0, 0, 0.5);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 9999;
+    }
+    
+    .username-modal-content {
+        background-color: var(--background-color);
+        padding: 30px;
+        border-radius: 15px;
+        box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+        max-width: 400px;
+        width: 90%;
+        text-align: center;
+        border: 1px solid var(--border-color);
+    }
 </style>
 """, unsafe_allow_html=True)
 
@@ -211,6 +236,10 @@ API_URL = "https://openrouter.ai/api/v1/chat/completions"
 # ===========================================
 # INISIALISASI SESSION STATE
 # ===========================================
+# Inisialisasi nama user
+if "user_name" not in st.session_state:
+    st.session_state.user_name = ""
+
 # Inisialisasi dictionary untuk menyimpan semua chat
 if "chats" not in st.session_state:
     st.session_state.chats = {}
@@ -234,11 +263,54 @@ if "regenerate_last" not in st.session_state:
     st.session_state.regenerate_last = False
 
 # ===========================================
+# MODAL INPUT NAMA USER
+# ===========================================
+if not st.session_state.user_name:
+    st.markdown("""
+    <div class="username-modal">
+        <div class="username-modal-content">
+            <h2>🤖 Selamat datang di PouringGPT!</h2>
+            <p>Silakan masukkan nama Anda untuk memulai percakapan</p>
+        </div>
+    </div>
+    """, unsafe_allow_html=True)
+    
+    # Container untuk input nama
+    with st.container():
+        st.markdown("<br><br><br>", unsafe_allow_html=True)
+        col1, col2, col3 = st.columns([1, 2, 1])
+        
+        with col2:
+            st.markdown("### 👋 Perkenalkan diri Anda")
+            user_name_input = st.text_input(
+                "Nama Anda:",
+                placeholder="Ketik nama Anda disini...",
+                key="name_input"
+            )
+            
+            if st.button("Mulai Chat", key="start_chat", use_container_width=True):
+                if user_name_input.strip():
+                    st.session_state.user_name = user_name_input.strip()
+                    st.rerun()
+                else:
+                    st.error("Silakan masukkan nama Anda terlebih dahulu!")
+    
+    st.stop()
+
+# ===========================================
 # SIDEBAR - RIWAYAT CHAT & PENGATURAN
 # ===========================================
 with st.sidebar:
     st.title("🤖 PouringGPT")
     st.markdown(f"<small>**Created by :** dangdingdung</small>", unsafe_allow_html=True)
+    st.markdown(f"<small>**Hai, {st.session_state.user_name}! 👋**</small>", unsafe_allow_html=True)
+    
+    # Tombol untuk mengubah nama
+    if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
+        st.session_state.user_name = ""
+        st.rerun()
+    
+    st.markdown("---")
     
     # Tombol untuk membuat chat baru
     if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
@@ -328,11 +400,11 @@ current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 chat_container = st.container()
 
 with chat_container:
-    # Jika belum ada pesan, tampilkan pesan selamat datang
+    # Jika belum ada pesan, tampilkan pesan selamat datang yang dipersonalisasi
     if not current_chat["messages"]:
-        st.markdown("""
+        st.markdown(f"""
         <div style='text-align: center; margin: 50px 0; color: var(--secondary-text-color);'>
-            <h3>Ada yang bisa Pouring bantu?</h3>
+            <h3>Hai {st.session_state.user_name}, Apa yang bisa Pouring bantu?</h3>
         </div>
         """, unsafe_allow_html=True)
     
@@ -340,12 +412,12 @@ with chat_container:
     for i, message in enumerate(current_chat["messages"]):
         timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
         
-        # Tampilkan pesan dari user
+        # Tampilkan pesan dari user dengan nama yang dipersonalisasi
         if message["role"] == "user":
             st.markdown(f"""
             <div class="user-message">
                 <div class="message-header">
-                    <span><div class="user-avatar message-avatar">YOU</div><strong>Anda</strong> • {timestamp}</span>
+                    <span><div class="user-avatar message-avatar">{st.session_state.user_name[:3].upper()}</div><strong>{st.session_state.user_name}</strong> • {timestamp}</span>
                 </div>
                 <div>{message["content"]}</div>
             </div>
@@ -355,7 +427,7 @@ with chat_container:
             st.markdown(f"""
             <div class="assistant-message">
                 <div class="message-header">
-                    <span><div class="ai-avatar message-avatar">AI</div><strong>AI Assistant</strong> • {timestamp}</span>
+                    <span><div class="ai-avatar message-avatar">AI</div><strong>Pouring</strong> • {timestamp}</span>
                 </div>
                 <div>{message["content"]}</div>
             </div>
@@ -378,7 +450,7 @@ if (current_chat["messages"] and
 # ===========================================
 # INPUT CHAT DARI USER
 # ===========================================
-user_input = st.chat_input("Ketik pesan Anda di sini...")
+user_input = st.chat_input(f"Ketik pesan {st.session_state.user_name} disini...")
 
 # ===========================================
 # PROSES REGENERATE RESPONSE
@@ -423,8 +495,8 @@ if user_input:
     # Tampilkan loading spinner saat menunggu response
     with st.spinner("AI sedang memikirkan jawaban..."):
         try:
-            # Siapkan format pesan untuk API OpenRouter
-            messages_for_api = [{"role": "system", "content": "You are a helpful assistant."}]
+            # Siapkan format pesan untuk API OpenRouter dengan personalisasi
+            messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
             for msg in current_chat["messages"]:
                 messages_for_api.append({
                     "role": msg["role"],

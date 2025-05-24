@@ -310,7 +310,8 @@ if not st.session_state.user_name:
 # ===========================================
 with st.sidebar:
     st.title("🤖 PouringGPT")
-    st.markdown(f"<small>**Model:** {st.session_state.selected_model} \n **Provider:** OpenRouter</small>", unsafe_allow_html=True)
+    st.markdown(f"<small>**Model:** {st.session_state.selected_model}", unsafe_allow_html=True)
+    st.markdown(f"<small>**Provider:** OpenRouter</small>", unsafe_allow_html=True)
 
 # Container untuk menampilkan percakapan
     

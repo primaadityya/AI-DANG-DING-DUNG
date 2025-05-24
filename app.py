@@ -287,11 +287,6 @@ with st.sidebar:
                 if len(st.session_state.chats) > 1:
                     del st.session_state.chats[chat_id]
                     if chat_id == st.session_state.current_chat_id:
-                        # Pilih chat pertama yang tersedia
-                        st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
-                    st.rerun()
-                else:
-                    st.error("Tidak bisa menghapus chat terakhir!")
 
     st.markdown("---")
     

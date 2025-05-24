@@ -4,9 +4,6 @@
 import streamlit as st
 import requests
 import uuid
-from datetime import datetime
-import hashlib
-import time
 
 # ===========================================
 # KONFIGURASI HALAMAN STREAMLIT
@@ -17,37 +14,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded"
 )
-
-# ===========================================
-# FUNGSI UNTUK GENERATE USER SESSION ID UNIK
-# ===========================================
-def get_user_session_id():
-    """Generate unique session ID per user/browser"""
-    if "user_session_id" not in st.session_state:
-        # Buat ID unik berdasarkan timestamp dan random UUID
-        timestamp = str(time.time())
-        random_id = str(uuid.uuid4())
-        session_string = f"{timestamp}_{random_id}"
-        st.session_state.user_session_id = hashlib.md5(session_string.encode()).hexdigest()[:16]
-    return st.session_state.user_session_id
-
-# ===========================================
-# FUNGSI UNTUK MANAGE DATA PER USER
-# ===========================================
-def get_user_key(key_name):
-    """Get user-specific key for session state"""
-    session_id = get_user_session_id()
-    return f"{session_id}_{key_name}"
-
-def get_user_data(key_name, default_value=None):
-    """Get user-specific data from session state"""
-    user_key = get_user_key(key_name)
-    return st.session_state.get(user_key, default_value)
-
-def set_user_data(key_name, value):
-    """Set user-specific data to session state"""
-    user_key = get_user_key(key_name)
-    st.session_state[user_key] = value
 
 # ===========================================
 # CUSTOM CSS UNTUK STYLING TAMPILAN
@@ -139,7 +105,7 @@ st.markdown("""
         --hover-color: #f3f4f6;
     }
     
-    /* Header untuk setiap pesan (waktu, nama) */
+    /* Header untuk setiap pesan (nama) */
     .message-header {
         display: flex;
         align-items: center;
@@ -179,21 +145,11 @@ st.markdown("""
         font-weight: bold;
     }
     
-    /* Nama dan waktu di samping avatar */
-    .message-info {
-        display: flex;
-        flex-direction: column;
-    }
-    
+    /* Nama di samping avatar */
     .message-name {
         font-weight: bold;
         color: var(--text-color);
         font-size: 14px;
-    }
-    
-    .message-time {
-        font-size: 11px;
-        color: var(--secondary-text-color);
     }
     
     /* Container untuk pemilihan model */
@@ -275,67 +231,41 @@ HEADERS = {
 API_URL = "https://openrouter.ai/api/v1/chat/completions"
 
 # ===========================================
-# FUNGSI UTILITAS UNTUK TIMESTAMP
+# INISIALISASI DATA SESSION STATE
 # ===========================================
-def get_current_time():
-    """Mendapatkan waktu sekarang dalam format datetime"""
-    return datetime.now()
+# Inisialisasi nama user
+if "user_name" not in st.session_state:
+    st.session_state.user_name = ""
 
-def format_time(dt):
-    """Format waktu menjadi HH:MM"""
-    if isinstance(dt, str):
-        # Jika string, parse dulu
-        try:
-            dt = datetime.fromisoformat(dt)
-        except:
-            return datetime.now().strftime("%H:%M")
-    return dt.strftime("%H:%M")
-
-# ===========================================
-# INISIALISASI DATA USER DENGAN SESSION ID
-# ===========================================
-# Generate unique session ID untuk user ini
-session_id = get_user_session_id()
-
-# Inisialisasi nama user (per session ID)
-if get_user_data("user_name") is None:
-    set_user_data("user_name", "")
-
-# Inisialisasi dictionary untuk menyimpan semua chat (per session ID)
-if get_user_data("chats") is None:
-    set_user_data("chats", {})
+# Inisialisasi dictionary untuk menyimpan semua chat
+if "chats" not in st.session_state:
+    st.session_state.chats = {}
     
-# Inisialisasi chat ID yang sedang aktif (per session ID)
-user_chats = get_user_data("chats", {})
-current_chat_id = get_user_data("current_chat_id")
-
-if current_chat_id is None or current_chat_id not in user_chats:
+# Inisialisasi chat ID yang sedang aktif
+if "current_chat_id" not in st.session_state or st.session_state.current_chat_id not in st.session_state.chats:
     chat_id = str(uuid.uuid4())
-    set_user_data("current_chat_id", chat_id)
-    user_chats[chat_id] = {
+    st.session_state.current_chat_id = chat_id
+    st.session_state.chats[chat_id] = {
         "title": "Chat Baru",
-        "messages": [],
-        "created_at": get_current_time()
+        "messages": []
     }
-    set_user_data("chats", user_chats)
 
-# Inisialisasi model yang dipilih (per session ID)
-if get_user_data("selected_model") is None:
-    set_user_data("selected_model", "Deepseek v3")
+# Inisialisasi model yang dipilih
+if "selected_model" not in st.session_state:
+    st.session_state.selected_model = "Deepseek v3"
 
-# Flag untuk regenerate response terakhir (per session ID)
-if get_user_data("regenerate_last") is None:
-    set_user_data("regenerate_last", False)
+# Flag untuk regenerate response terakhir
+if "regenerate_last" not in st.session_state:
+    st.session_state.regenerate_last = False
 
-# Flag untuk menampilkan loading (per session ID)
-if get_user_data("is_loading") is None:
-    set_user_data("is_loading", False)
+# Flag untuk menampilkan loading
+if "is_loading" not in st.session_state:
+    st.session_state.is_loading = False
 
 # ===========================================
 # MODAL INPUT NAMA USER
 # ===========================================
-user_name = get_user_data("user_name", "")
-if not user_name:
+if not st.session_state.user_name:
     # Container untuk input nama tanpa modal overlay
     st.markdown("<br><br>", unsafe_allow_html=True)
     
@@ -366,23 +296,23 @@ if not user_name:
         user_name_input = st.text_input(
             "Nama Anda:",
             placeholder="Ketik nama Nama disini...",
-            key=f"name_input_{session_id}",
+            key="name_input",
             help="Nama ini akan digunakan untuk mempersonalisasi percakapan dengan Pouring"
         )
         
         col_btn1, col_btn2 = st.columns(2)
         
         with col_btn1:
-            if st.button("🚀 Mulai Chat", key=f"start_chat_{session_id}", use_container_width=True, type="primary"):
+            if st.button("🚀 Mulai Chat", key="start_chat", use_container_width=True, type="primary"):
                 if user_name_input.strip():
-                    set_user_data("user_name", user_name_input.strip())
+                    st.session_state.user_name = user_name_input.strip()
                     st.rerun()
                 else:
                     st.error("Silakan masukkan nama Anda terlebih dahulu!")
         
         with col_btn2:
-            if st.button("⏭️ Lewati", key=f"skip_name_{session_id}", use_container_width=True, help="Chat tanpa nama personal"):
-                set_user_data("user_name", "Pengguna")
+            if st.button("⏭️ Lewati", key="skip_name", use_container_width=True, help="Chat tanpa nama personal"):
+                st.session_state.user_name = "Pengguna"
                 st.rerun()
         
         st.markdown("""
@@ -398,36 +328,28 @@ if not user_name:
 # ===========================================
 with st.sidebar:
     st.title("🤖 PouringGPT")
-    selected_model = get_user_data("selected_model", "Deepseek v3")
-    st.markdown(f"<small>**Model:** {selected_model}</small>", unsafe_allow_html=True)
+    st.markdown(f"<small>**Model:** {st.session_state.selected_model}</small>", unsafe_allow_html=True)
     st.markdown(f"<small>**Provider:** OpenRouter</small>", unsafe_allow_html=True)
     
     # Tombol untuk mengubah nama
-    if st.button("✏️ Ubah Nama", key=f"change_name_{session_id}", help="Ubah nama pengguna", use_container_width=True):
-        set_user_data("user_name", "")
+    if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):
+        st.session_state.user_name = ""
         st.rerun()
 
     st.markdown("---")
     
     # Tombol untuk membuat chat baru
-    if st.button("➕ Chat Baru", key=f"new_chat_{session_id}", help="Mulai percakapan baru", use_container_width=True):
+    if st.button("➕ Chat Baru", key="new_chat", help="Mulai percakapan baru", use_container_width=True):
         chat_id = str(uuid.uuid4())
-        set_user_data("current_chat_id", chat_id)
-        user_chats = get_user_data("chats", {})
-        user_chats[chat_id] = {
+        st.session_state.current_chat_id = chat_id
+        st.session_state.chats[chat_id] = {
             "title": "Chat Baru",
-            "messages": [],
-            "created_at": get_current_time()
+            "messages": []
         }
-        set_user_data("chats", user_chats)
         st.rerun()
     
     # Tampilkan daftar semua chat yang ada
-    user_chats = get_user_data("chats", {})
-    current_chat_id = get_user_data("current_chat_id")
-    
-    for chat_id, chat_data in sorted(user_chats.items(), 
-                                   key=lambda x: x[1]["created_at"], reverse=True):
+    for chat_id, chat_data in st.session_state.chats.items():
         
         col1, col2 = st.columns([4, 1])
         
@@ -442,40 +364,36 @@ with st.sidebar:
                 else:
                     title = first_user_msg
             
-            is_active = chat_id == current_chat_id
+            is_active = chat_id == st.session_state.current_chat_id
             
             # Tombol untuk memilih chat
             if st.button(
                 title,
-                key=f"chat_{chat_id}_{session_id}",
-                help=f"Buka chat - {chat_data['created_at'].strftime('%d/%m/%Y %H:%M')}",
+                key=f"chat_{chat_id}",
+                help="Buka chat",
                 type="primary" if is_active else "secondary",
                 use_container_width=True
             ):
-                set_user_data("current_chat_id", chat_id)
+                st.session_state.current_chat_id = chat_id
                 st.rerun()
         
         with col2:
             # Tombol untuk menghapus chat
-            if st.button("🗑️", key=f"delete_{chat_id}_{session_id}", help="Hapus chat"):
-                user_chats = get_user_data("chats", {})
-                del user_chats[chat_id]
-                set_user_data("chats", user_chats)
+            if st.button("🗑️", key=f"delete_{chat_id}", help="Hapus chat"):
+                del st.session_state.chats[chat_id]
                 
-                if chat_id == current_chat_id:
+                if chat_id == st.session_state.current_chat_id:
                     # Jika ada chat lain, pilih yang pertama. Jika tidak, buat chat baru
-                    if user_chats:
-                        set_user_data("current_chat_id", list(user_chats.keys())[0])
+                    if st.session_state.chats:
+                        st.session_state.current_chat_id = list(st.session_state.chats.keys())[0]
                     else:
                         # Buat chat baru jika semua chat telah dihapus
                         new_chat_id = str(uuid.uuid4())
-                        set_user_data("current_chat_id", new_chat_id)
-                        user_chats[new_chat_id] = {
+                        st.session_state.current_chat_id = new_chat_id
+                        st.session_state.chats[new_chat_id] = {
                             "title": "Chat Baru",
-                            "messages": [],
-                            "created_at": get_current_time()
+                            "messages": []
                         }
-                        set_user_data("chats", user_chats)
                 st.rerun()
 
     st.markdown("---")
@@ -485,25 +403,21 @@ with st.sidebar:
     selected_model_new = st.selectbox(
         "Model AI:",
         options=list(AVAILABLE_MODELS.keys()),
-        index=list(AVAILABLE_MODELS.keys()).index(selected_model),
-        key=f"model_selector_{session_id}"
+        index=list(AVAILABLE_MODELS.keys()).index(st.session_state.selected_model),
+        key="model_selector"
     )
     
     # Update model jika ada perubahan
-    if selected_model_new != selected_model:
-        set_user_data("selected_model", selected_model_new)
+    if selected_model_new != st.session_state.selected_model:
+        st.session_state.selected_model = selected_model_new
         st.rerun()
 
 # ===========================================
 # KONTEN UTAMA - AREA CHAT
 # ===========================================
 # Ambil data chat yang sedang aktif
-user_chats = get_user_data("chats", {})
-current_chat_id = get_user_data("current_chat_id")
-current_chat = user_chats[current_chat_id]
-selected_model = get_user_data("selected_model", "Deepseek v3")
-current_model = AVAILABLE_MODELS[selected_model]
-user_name = get_user_data("user_name", "Pengguna")
+current_chat = st.session_state.chats[st.session_state.current_chat_id]
+current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
 # Container untuk menampilkan percakapan
 chat_container = st.container()
@@ -513,13 +427,12 @@ with chat_container:
     if not current_chat["messages"]:
         st.markdown(f"""
         <div style='text-align: center; margin: 50px 0; color: var(--secondary-text-color);'>
-            <h3>Hai {user_name}, Apa yang bisa Pouring bantu?</h3>
+            <h3>Hai {st.session_state.user_name}, Apa yang bisa Pouring bantu?</h3>
         </div>
         """, unsafe_allow_html=True)
     
     # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
-        timestamp = format_time(message.get("timestamp", get_current_time()))
         
         # Tampilkan pesan dari user dengan nama yang dipersonalisasi
         if message["role"] == "user":
@@ -527,10 +440,7 @@ with chat_container:
             <div class="user-message">
                 <div class="message-header">
                     <div class="user-avatar message-avatar">👤</div>
-                    <div class="message-info">
-                        <div class="message-name">{user_name}</div>
-                        <div class="message-time">{timestamp}</div>
-                    </div>
+                    <div class="message-name">{st.session_state.user_name}</div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
@@ -541,27 +451,19 @@ with chat_container:
             <div class="assistant-message">
                 <div class="message-header">
                     <div class="ai-avatar message-avatar">🤖</div>
-                    <div class="message-info">
-                        <div class="message-name">Pouring</div>
-                        <div class="message-time">{timestamp}</div>
-                    </div>
+                    <div class="message-name">Pouring</div>
                 </div>
                 <div>{message["content"]}</div>
             </div>
             """, unsafe_allow_html=True)
     
     # Tampilkan loading message jika sedang memproses
-    is_loading = get_user_data("is_loading", False)
-    if is_loading:
-        current_time = format_time(get_current_time())
+    if st.session_state.is_loading:
         st.markdown(f"""
         <div class="loading-message">
             <div class="message-header">
                 <div class="ai-avatar message-avatar">🤖</div>
-                <div class="message-info">
-                    <div class="message-name">Pouring</div>
-                    <div class="message-time">{current_time}</div>
-                </div>
+                <div class="message-name">Pouring</div>
             </div>
             <div>Pouring sedang mengetik...</div>
         </div>
@@ -573,34 +475,29 @@ with chat_container:
 # Tampilkan tombol regenerate jika pesan terakhir dari AI
 if (current_chat["messages"] and 
     current_chat["messages"][-1]["role"] == "assistant" and
-    not is_loading):
+    not st.session_state.is_loading):
     
     col1, col2, col3 = st.columns([1, 1, 1])
     with col2:
-        if st.button("🔄 Regenerate Response", key=f"regenerate_btn_{session_id}", 
+        if st.button("🔄 Regenerate Response", key="regenerate_btn", 
                    help="Generate ulang respons terakhir", use_container_width=True):
-            set_user_data("regenerate_last", True)
+            st.session_state.regenerate_last = True
             st.rerun()
 
 # ===========================================
 # INPUT CHAT DARI USER
 # ===========================================
-user_input = st.chat_input(f"Ketik pesan {user_name} disini...")
+user_input = st.chat_input(f"Ketik pesan {st.session_state.user_name} disini...")
 
 # ===========================================
 # PROSES REGENERATE RESPONSE
 # ===========================================
-regenerate_last = get_user_data("regenerate_last", False)
-if regenerate_last:
-    set_user_data("regenerate_last", False)
+if st.session_state.regenerate_last:
+    st.session_state.regenerate_last = False
     
     # Hapus pesan AI terakhir
     if current_chat["messages"] and current_chat["messages"][-1]["role"] == "assistant":
         current_chat["messages"].pop()
-        
-        # Update data chat
-        user_chats[current_chat_id] = current_chat
-        set_user_data("chats", user_chats)
         
         # Ambil pesan user terakhir untuk regenerate
         last_user_message = None
@@ -617,11 +514,10 @@ if regenerate_last:
 # ===========================================
 if user_input:
     # Jika bukan regenerate, tambahkan pesan user baru
-    if not regenerate_last:
+    if not st.session_state.regenerate_last:
         user_message = {
             "role": "user", 
-            "content": user_input,
-            "timestamp": get_current_time()
+            "content": user_input
         }
         current_chat["messages"].append(user_message)
         
@@ -631,22 +527,18 @@ if user_input:
                 current_chat["title"] = user_input[:30] + "..."
             else:
                 current_chat["title"] = user_input
-        
-        # Update data chat
-        user_chats[current_chat_id] = current_chat
-        set_user_data("chats", user_chats)
     
     # Set loading state
-    set_user_data("is_loading", True)
+    st.session_state.is_loading = True
     st.rerun()
 
 # ===========================================
 # PROSES API CALL (ASYNC HANDLING)
 # ===========================================
-if is_loading:
+if st.session_state.is_loading:
     try:
         # Siapkan format pesan untuk API OpenRouter dengan personalisasi
-        messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
+        messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
         for msg in current_chat["messages"]:
             if msg["role"] != "loading":  # Skip loading messages
                 messages_for_api.append({
@@ -675,17 +567,12 @@ if is_loading:
     # Tambahkan respons AI ke riwayat chat
     ai_message = {
         "role": "assistant",
-        "content": bot_reply,
-        "timestamp": get_current_time()
+        "content": bot_reply
     }
     current_chat["messages"].append(ai_message)
     
-    # Update data chat
-    user_chats[current_chat_id] = current_chat
-    set_user_data("chats", user_chats)
-    
     # Reset loading state
-    set_user_data("is_loading", False)
+    st.session_state.is_loading = False
     
     # Refresh halaman untuk menampilkan pesan baru
     st.rerun()

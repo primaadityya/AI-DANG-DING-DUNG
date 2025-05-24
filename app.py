@@ -310,7 +310,9 @@ if not st.session_state.user_name:
 # ===========================================
 with st.sidebar:
     st.title("🤖 PouringGPT")
-    st.markdown(f"**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
+    st.markdown(f"<small>**Model:** {st.session_state.selected_model} \n **Provider:** OpenRouter</small>", unsafe_allow_html=True)
+
+# Container untuk menampilkan percakapan
     
     # Tombol untuk mengubah nama
     if st.button("✏️ Ubah Nama", key="change_name", help="Ubah nama pengguna", use_container_width=True):

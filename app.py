@@ -10,6 +10,56 @@ import uuid
 # ===========================================
 st.markdown("""
 <style>
+    :root {
+        --background-color: #f7f9fa;
+        --background-color-secondary: #e3f2fd;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
+        --user-bubble-bg: #e3f2fd;
+        --user-bubble-color: #1976d2;
+        --user-bubble-border: #bbdefb;
+        --assistant-bubble-bg: #ffffff;
+        --assistant-bubble-color: #424242;
+        --assistant-bubble-border: #e0e0e0;
+    }
+    /* Override untuk tema gelap berbasis data-theme (Streamlit >=1.30) */
+    [data-theme="dark"]:root, [data-testid="stApp"][data-theme="dark"]:root {
+        --background-color: #181c20;
+        --background-color-secondary: #223a5f;
+        --text-color: #f3f6fa;
+        --border-color: #30363d;
+        --secondary-text-color: #8b949e;
+        --hover-color: #23272f;
+        --user-bubble-bg: #223a5f;
+        --user-bubble-color: #dbeafe;
+        --user-bubble-border: #3b82f6;
+        --assistant-bubble-bg: #23272f;
+        --assistant-bubble-color: #f3f6fa;
+        --assistant-bubble-border: #4b5563;
+    }
+    /* Fallback untuk tema gelap berbasis prefers-color-scheme */
+    @media (prefers-color-scheme: dark) {
+        :root {
+            --background-color: #181c20 !important;
+            --background-color-secondary: #223a5f !important;
+            --text-color: #f3f6fa !important;
+            --border-color: #30363d !important;
+            --secondary-text-color: #8b949e !important;
+            --hover-color: #23272f !important;
+            --user-bubble-bg: #223a5f !important;
+            --user-bubble-color: #dbeafe !important;
+            --user-bubble-border: #3b82f6 !important;
+            --assistant-bubble-bg: #23272f !important;
+            --assistant-bubble-color: #f3f6fa !important;
+            --assistant-bubble-border: #4b5563 !important;
+        }
+    }
+    body, .main-content {
+        background: var(--background-color) !important;
+        color: var(--text-color) !important;
+    }
     /* Container utama untuk membatasi lebar konten */
     .main-content {
         max-width: 800px;
@@ -19,27 +69,27 @@ st.markdown("""
 
     /* Styling untuk pesan dari user */
     .user-message {
-        background-color: var(--background-color-secondary);
-        color: var(--text-color);
+        background-color: var(--user-bubble-bg);
+        color: var(--user-bubble-color);
+        border: 1px solid var(--user-bubble-border);
         padding: 15px 20px;
         border-radius: 18px;
         margin: 10px 0;
         margin-left: 20%;
         position: relative;
         box-shadow: 0 1px 3px rgba(0,0,0,0.1);
-        border: 1px solid var(--border-color);
     }
 
     /* Styling untuk pesan dari AI assistant */
     .assistant-message {
-        background-color: var(--background-color);
-        color: var(--text-color);
+        background-color: var(--assistant-bubble-bg);
+        color: var(--assistant-bubble-color);
+        border: 1px solid var(--assistant-bubble-border);
         padding: 15px 20px;
         border-radius: 18px;
         margin: 10px 0;
         margin-right: 20%;
         position: relative;
-        border: 1px solid var(--border-color);
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
@@ -150,13 +200,13 @@ st.markdown("""
 
     /* Efek hover untuk item chat */
     .chat-item:hover {
-        background-color: var(--hover-color);
+        background-color: var(--hover-color) !important;
     }
 
     /* Chat yang sedang aktif */
     .chat-item.active {
         background-color: var(--background-color-secondary);
-        border-color: #3b82f6;
+        border-color: #3b82f6 !important;
     }
 
     /* Styling untuk welcome section */
@@ -164,6 +214,22 @@ st.markdown("""
         max-width: 600px;
         margin: 0 auto;
         padding: 20px;
+        background-color: var(--background-color-secondary) !important;
+        color: var(--text-color) !important;
+        border-color: var(--border-color) !important;
+    }
+
+    /* Loading message styling */
+    .loading-message {
+        display: flex;
+        align-items: center;
+        justify-content: flex-start;
+        margin: 10px 0;
+        padding: 10px;
+        border-radius: 10px;
+        background-color: var(--background-color-secondary) !important;
+        color: var(--text-color) !important;
+        border: 1px solid var(--border-color) !important;
     }
 </style>
 """, unsafe_allow_html=True)

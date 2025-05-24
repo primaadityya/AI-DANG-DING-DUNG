@@ -325,13 +325,20 @@ current_model = AVAILABLE_MODELS[st.session_state.selected_model]
 
 # Header halaman utama
 st.title("🤖 AI Chatbot")
-st.markdown(f"**Created by:** dangdingdung | **Model:** {st.session_state.selected_model} | **Provider:** OpenRouter")
-st.markdown("---")
+st.markdown(f"<small>**Model:** {st.session_state.selected_model} | **Provider:** OpenRouter</small>", unsafe_allow_html=True)
 
 # Container untuk menampilkan percakapan
 chat_container = st.container()
 
 with chat_container:
+    # Jika belum ada pesan, tampilkan pesan selamat datang
+    if not current_chat["messages"]:
+        st.markdown("""
+        <div style='text-align: center; margin: 50px 0; color: var(--secondary-text-color);'>
+            <h3>Ada yang bisa Pouring bantu?</h3>
+        </div>
+        """, unsafe_allow_html=True)
+    
     # Tampilkan semua pesan dalam chat yang aktif
     for i, message in enumerate(current_chat["messages"]):
         timestamp = message.get("timestamp", datetime.now()).strftime("%H:%M")
@@ -374,7 +381,6 @@ if (current_chat["messages"] and
 # ===========================================
 # INPUT CHAT DARI USER
 # ===========================================
-st.markdown("---")
 user_input = st.chat_input("Ketik pesan Anda di sini...")
 
 # ===========================================
@@ -460,9 +466,8 @@ if user_input:
 # ===========================================
 # FOOTER - INFORMASI STATUS
 # ===========================================
-st.markdown("---")
 st.markdown(
-    "<div style='text-align: center; color: var(--secondary-text-color); font-size: 12px;'>"
+    "<div style='text-align: center; color: var(--secondary-text-color); font-size: 12px; margin-top: 20px;'>"
     f"Powered by {st.session_state.selected_model} via OpenRouter • "
     f"Total Chats: {len(st.session_state.chats)} • "
     f"Messages in current chat: {len(current_chat['messages'])}"

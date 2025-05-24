@@ -256,7 +256,8 @@ if not st.session_state.user_name:
     <div style='text-align: center; padding: 30px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
                 border-radius: 15px; margin-bottom: 30px; color: white; box-shadow: 0 10px 25px rgba(0,0,0,0.1);'>
         <h1>🤖 Selamat datang di PouringGPT!</h1>
-        <p style='font-size: 18px; margin: 0;'>AI Assistant yang siap membantu Anda</p>
+        <p style='font-size: 18px; margin: 0;'>AI Assistant yang siap membantu Kamu</p>
+        <p style='font-size: 14px; margin: 0;'>Created by : dangdingdung</p>        
     </div>
     """, unsafe_allow_html=True)
     
@@ -267,16 +268,16 @@ if not st.session_state.user_name:
         st.markdown("""
         <div style='background-color: var(--background-color-secondary); padding: 25px; border-radius: 10px; 
                     border: 1px solid var(--border-color); text-align: center; margin-bottom: 20px;'>
-            <h3 style='margin-top: 0; color: var(--text-color);'>👋 Perkenalkan diri Anda</h3>
+            <h3 style='margin-top: 0; color: var(--text-color);'>👋 Perkenalkan diri Kamu</h3>
             <p style='color: var(--secondary-text-color); margin-bottom: 20px;'>
-                Masukkan nama Anda untuk pengalaman chat yang lebih personal
+                Masukkan nama Kamu untuk pengalaman chat yang lebih personal
             </p>
         </div>
         """, unsafe_allow_html=True)
         
         user_name_input = st.text_input(
             "Nama Anda:",
-            placeholder="Ketik nama Anda disini...",
+            placeholder="Ketik nama Nama disini...",
             key="name_input",
             help="Nama ini akan digunakan untuk mempersonalisasi percakapan dengan Pouring"
         )

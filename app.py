@@ -53,6 +53,32 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
+    /* Force tema terang untuk pesan */
+    [data-testid="stApp"]:not([data-theme="dark"]) .user-message {
+        background-color: #f0f2f6 !important;
+        color: #262730 !important;
+        border: 1px solid #e1e5e9 !important;
+    }
+    
+    [data-testid="stApp"]:not([data-theme="dark"]) .assistant-message {
+        background-color: #ffffff !important;
+        color: #262730 !important;
+        border: 1px solid #e1e5e9 !important;
+    }
+    
+    /* Force tema gelap untuk pesan */
+    [data-testid="stApp"][data-theme="dark"] .user-message {
+        background-color: #262730 !important;
+        color: #fafafa !important;
+        border: 1px solid #30363d !important;
+    }
+    
+    [data-testid="stApp"][data-theme="dark"] .assistant-message {
+        background-color: #0e1117 !important;
+        color: #fafafa !important;
+        border: 1px solid #30363d !important;
+    }
+
     /* Variabel CSS untuk tema terang */
     :root {
         --background-color: #ffffff;

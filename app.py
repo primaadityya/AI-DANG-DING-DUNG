@@ -53,32 +53,6 @@ st.markdown("""
         box-shadow: 0 1px 3px rgba(0,0,0,0.05);
     }
 
-    /* Force tema terang untuk pesan */
-    [data-testid="stApp"]:not([data-theme="dark"]) .user-message {
-        background-color: #f0f2f6 !important;
-        color: #262730 !important;
-        border: 1px solid #e1e5e9 !important;
-    }
-    
-    [data-testid="stApp"]:not([data-theme="dark"]) .assistant-message {
-        background-color: #ffffff !important;
-        color: #262730 !important;
-        border: 1px solid #e1e5e9 !important;
-    }
-    
-    /* Force tema gelap untuk pesan */
-    [data-testid="stApp"][data-theme="dark"] .user-message {
-        background-color: #262730 !important;
-        color: #fafafa !important;
-        border: 1px solid #30363d !important;
-    }
-    
-    [data-testid="stApp"][data-theme="dark"] .assistant-message {
-        background-color: #0e1117 !important;
-        color: #fafafa !important;
-        border: 1px solid #30363d !important;
-    }
-
     /* Variabel CSS untuk tema terang */
     :root {
         --background-color: #ffffff;
@@ -92,8 +66,8 @@ st.markdown("""
     /* Variabel CSS untuk tema gelap (deteksi otomatis) */
     @media (prefers-color-scheme: dark) {
         :root {
-            --background-color: #0e1117;
-            --background-color-secondary: #262730;
+            --background-color: #1e1e1e;
+            --background-color-secondary: #2d2d2d;
             --text-color: #fafafa;
             --border-color: #404040;
             --secondary-text-color: #a1a1a1;
@@ -111,24 +85,24 @@ st.markdown("""
         --hover-color: #21262d;
     }
 
-    /* Override untuk tema terang (default) */
+    /* Force override untuk tema gelap */
     [data-testid="stApp"] {
-        --background-color: #ffffff;
-        --background-color-secondary: #f0f2f6;
-        --text-color: #262730;
-        --border-color: #e1e5e9;
-        --secondary-text-color: #6b7280;
-        --hover-color: #f3f4f6;
-    }
-
-    /* Override untuk tema gelap */
-    [data-testid="stApp"][data-theme="dark"] {
         --background-color: #0e1117;
         --background-color-secondary: #262730;
         --text-color: #fafafa;
         --border-color: #30363d;
         --secondary-text-color: #8b949e;
         --hover-color: #21262d;
+    }
+
+    /* Override untuk tema terang */
+    [data-testid="stApp"][data-theme="light"] {
+        --background-color: #ffffff;
+        --background-color-secondary: #f0f2f6;
+        --text-color: #262730;
+        --border-color: #e1e5e9;
+        --secondary-text-color: #6b7280;
+        --hover-color: #f3f4f6;
     }
     
     /* Header untuk setiap pesan (nama) */

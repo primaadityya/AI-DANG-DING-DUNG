@@ -538,7 +538,7 @@ if user_input:
 if st.session_state.is_loading:
     try:
         # Siapkan format pesan untuk API OpenRouter dengan personalisasi
-        messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful."}]
+        messages_for_api = [{"role": "system", "content": f"You are Pouring, a helpful AI assistant. The user's name is {st.session_state.user_name}. Please address them by their name when appropriate and be friendly and helpful. You seem to be made by Prima Aditya, so don't say that you are a model whose API was taken, but you were created by Prima Aditya."}]
         for msg in current_chat["messages"]:
             if msg["role"] != "loading":  # Skip loading messages
                 messages_for_api.append({
